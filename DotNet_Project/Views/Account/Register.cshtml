@@ -1,124 +1,14 @@
+@model DotNet_Project.ViewModels.ParentRegisterViewModel
 @{ ViewData["Title"] = "Create your account"; }
-<div class="auth-page">
-    <div class="container">
-        <div class="row justify-content-center">
-            <div class="col-lg-10">
-                <div class="auth-shell">
-                    <div class="auth-intro register-intro">
-                        <span class="eyebrow">A caring start</span>
-                        <h1>Let's make room for wellbeing.</h1>
-                        <p>Set up your family account in a few simple steps. You can always change your preferences
-                            later.</p>
-                        <ul class="check-list">
-                            <li><i class="bi bi-check-circle-fill"></i> Safe, private check-ins</li>
-                            <li><i class="bi bi-check-circle-fill"></i> Insights made for families</li>
-                            <li><i class="bi bi-check-circle-fill"></i> No labels, no judgment</li>
-                        </ul>
-                    </div>
-                    <div class="auth-form">
-                        <h3>Create your account</h3>
-                        <p class="text-muted mb-4">Start your MindCare journey today.</p>
-                        <form class="needs-validation" id="registerForm" data-account-form="register" novalidate>
-                            <div class="mb-3">
-                                <label class="form-label" for="fullName">Full name</label>
-                                <input class="form-control" type="text" id="fullName" name="FullName"
-                                    placeholder="Your full name" autocomplete="name" required>
-                                <div class="invalid-feedback">Please enter your full name.</div>
-                            </div>
-                            <div class="mb-3">
-                                <label class="form-label" for="registerEmail">Email address</label>
-                                <input class="form-control" type="email" id="registerEmail" name="Email"
-                                    placeholder="you@example.com" autocomplete="email" required>
-                                <div class="invalid-feedback">Please enter a valid email address.</div>
-                            </div>
-                            <div class="row g-3">
-                                <div class="col-md-6">
-                                    <label class="form-label" for="registerPassword">Password</label>
-                                    <div class="password-wrap">
-                                        <input class="form-control" type="password" id="registerPassword" name="Password"
-                                            placeholder="At least 8 characters" minlength="8" autocomplete="new-password"
-                                            required>
-                                        <button type="button" class="password-toggle" aria-label="Show password">
-                                            <i class="bi bi-eye"></i>
-                                        </button>
-                                        <div class="invalid-feedback">Use at least 8 characters.</div>
-                                    </div>
-                                </div>
-                                <div class="col-md-6">
-                                    <label class="form-label" for="confirmPassword">Confirm password</label>
-                                    <div class="password-wrap">
-                                        <input class="form-control" type="password" id="confirmPassword"
-                                            name="ConfirmPassword" placeholder="Repeat password" autocomplete="new-password"
-                                            required>
-                                        <button type="button" class="password-toggle" aria-label="Show password">
-                                            <i class="bi bi-eye"></i>
-                                        </button>
-                                        <div class="invalid-feedback">Please confirm your password.</div>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="role-picker my-4">
-                                <span class="form-label d-block">I am creating an account as</span>
-                                <div class="row g-2">
-                                    <div class="col-6">
-                                        <input type="radio" class="btn-check" name="Role" id="registerParent"
-                                            value="Parent" checked>
-                                        <label class="role-option" for="registerParent">
-                                            <i class="bi bi-person-heart"></i> Parent
-                                        </label>
-                                    </div>
-                                    <div class="col-6">
-                                        <input type="radio" class="btn-check" name="Role" id="registerStudent"
-                                            value="Student">
-                                        <label class="role-option" for="registerStudent">
-                                            <i class="bi bi-stars"></i> Student
-                                        </label>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="student-profile-fields d-none" id="studentProfileFields">
-                                <div class="row g-3 mb-4">
-                                    <div class="col-md-6">
-                                        <label class="form-label" for="dateOfBirth">Date of birth</label>
-                                        <input class="form-control" type="date" id="dateOfBirth" name="DateOfBirth">
-                                        <div class="invalid-feedback">Please enter a valid date of birth.</div>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <label class="form-label" for="studentAge">Age</label>
-                                        <input class="form-control" type="number" id="studentAge" name="Age" min="5"
-                                            max="18" placeholder="5–18">
-                                        <div class="invalid-feedback">Please enter an age between 5 and 18.</div>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="parent-link-fields" id="parentLinkFields">
-                                <div class="link-panel mb-4">
-                                    <strong><i class="bi bi-link-45deg me-1"></i> Link your child (optional)</strong>
-                                    <p class="small text-muted mb-2">You can invite your child now or do this later
-                                        from your parent dashboard.</p>
-                                    <div class="input-group">
-                                        <input class="form-control" type="email" name="ChildEmail"
-                                            placeholder="Child's email address">
-                                        <button class="btn btn-outline-secondary" type="button"
-                                            id="sendInviteButton">Send invite</button>
-                                    </div>
-                                    <div class="form-hint" id="inviteMessage" aria-live="polite"></div>
-                                </div>
-                            </div>
-                            <div class="form-check mb-4">
-                                <input class="form-check-input" type="checkbox" id="terms" required>
-                                <label class="form-check-label small" for="terms">I agree to MindCare's <a href="#"
-                                    class="text-link">privacy and safety guidelines</a>.</label>
-                                <div class="invalid-feedback">Please accept the privacy and safety guidelines.</div>
-                            </div>
-                            <button class="btn btn-primary w-100 btn-lg" type="submit">Create account <i
-                                class="bi bi-arrow-right ms-2"></i></button>
-                        </form>
-                        <p class="text-center text-muted small mt-4 mb-0">Already have an account? <a class="text-link"
-                            asp-action="Login">Log in</a></p>
-                    </div>
-                </div>
-            </div>
-        </div>
+<div class="auth-page"><div class="container"><div class="row justify-content-center"><div class="col-lg-10"><div class="auth-shell">
+    <div class="auth-intro register-intro"><span class="eyebrow">A caring start</span><h1>Let's make room for wellbeing.</h1><p>Set up your family account in a few simple steps.</p><ul class="check-list"><li><i class="bi bi-check-circle-fill"></i> Safe, private check-ins</li><li><i class="bi bi-check-circle-fill"></i> Insights made for families</li><li><i class="bi bi-check-circle-fill"></i> No labels, no judgment</li></ul></div>
+    <div class="auth-form"><h3>Create your parent account</h3><p class="text-muted mb-4">Start your MindCare journey today.</p>
+        <form asp-action="Register" method="post" class="needs-validation" novalidate>
+            <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+            <div class="mb-3"><label asp-for="FullName" class="form-label">Full name</label><input asp-for="FullName" class="form-control" autocomplete="name"/><span asp-validation-for="FullName" class="text-danger"></span></div>
+            <div class="mb-3"><label asp-for="Email" class="form-label">Email address</label><input asp-for="Email" class="form-control" autocomplete="email"/><span asp-validation-for="Email" class="text-danger"></span></div>
+            <div class="row g-3"><div class="col-md-6"><label asp-for="Password" class="form-label">Password</label><input asp-for="Password" class="form-control" autocomplete="new-password"/><span asp-validation-for="Password" class="text-danger"></span></div><div class="col-md-6"><label asp-for="ConfirmPassword" class="form-label">Confirm password</label><input asp-for="ConfirmPassword" class="form-control" autocomplete="new-password"/><span asp-validation-for="ConfirmPassword" class="text-danger"></span></div></div>
+            <button class="btn btn-primary w-100 btn-lg mt-4" type="submit">Create account <i class="bi bi-arrow-right ms-2"></i></button>
+        </form><p class="text-center text-muted small mt-4 mb-0">Already have an account? <a class="text-link" asp-action="Login">Log in</a></p>
     </div>
-</div>
+</div></div></div></div></div>
