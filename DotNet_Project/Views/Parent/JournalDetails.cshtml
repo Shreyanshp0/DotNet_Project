@@ -1,3 +1,60 @@
-@{ ViewData["Title"] = "Journal history"; }
-@section Styles { <link rel="stylesheet" href="~/css/activities.css" asp-append-version="true" /> }
-<div class="activity-page parent-activity-page"><div class="container activity-container"><a class="back-link" asp-action="DailyActivity"><i class="bi bi-arrow-left"></i> Back to daily activity</a><div class="activity-heading"><span class="eyebrow">Shared reflections</span><h1>Alex's journal history</h1><p>These are the entries Alex has chosen to submit. Please read them with care and respect.</p></div><div class="privacy-notice"><i class="bi bi-eye"></i><p class="mb-0">Only submitted entries are visible to you. Blank answers and “Prefer not to answer” choices are respected.</p></div><div class="journal-history-list"><article class="journal-entry"><div class="entry-heading"><div><span class="card-kicker">October 13, 2026 · 7:48 PM</span><h3>A busy day</h3></div><span class="entry-emotion">🌙 Tired</span></div><p><strong>Best part:</strong> Finished my art project.</p><p><strong>Was anything difficult?</strong> Prefer not to answer.</p><p><strong>How would you describe your day?</strong> Busy but okay.</p><p><strong>Anything they would like help with?</strong> Not shared.</p></article><article class="journal-entry"><div class="entry-heading"><div><span class="card-kicker">October 12, 2026 · 8:16 PM</span><h3>A steady day</h3></div><span class="entry-emotion">🌿 Calm</span></div><p><strong>Best part:</strong> Had lunch with my friends.</p><p><strong>Was anything difficult?</strong> Not shared.</p><p><strong>How would you describe your day?</strong> Steady.</p><p><strong>Anything they would like help with?</strong> Not shared.</p></article></div></div></div>
+@model DotNet_Project.Models.JournalEntry
+@{
+    ViewData["Title"] = "Journal details";
+    var activeChild = ViewBag.ActiveChild as DotNet_Project.Models.ChildProfile;
+    var childName = activeChild?.ChildName ?? "Alex";
+}
+@section Styles {
+    <link rel="stylesheet" href="~/css/activities.css" asp-append-version="true" />
+}
+<div class="activity-page parent-activity-page">
+    <div class="container activity-container">
+        <a class="back-link" asp-action="DailyActivity"><i class="bi bi-arrow-left"></i> Back to daily activity</a>
+        <div class="activity-heading">
+            <span class="eyebrow">Shared reflections</span>
+            <h1>@childName's journal entry</h1>
+            <p>These are the entries @childName has chosen to submit. Please read them with care and respect.</p>
+        </div>
+        <div class="privacy-notice">
+            <i class="bi bi-eye"></i>
+            <p class="mb-0">Only submitted entries are visible to you. Blank answers and “Prefer not to answer” choices are respected.</p>
+        </div>
+        <div class="journal-history-list">
+            @if (Model != null)
+            {
+                <article class="journal-entry">
+                    <div class="entry-heading">
+                        <div>
+                            <span class="card-kicker">@Model.EntryDate.ToString("MMMM dd, yyyy") · @Model.CreatedAt.ToLocalTime().ToString("h:mm tt")</span>
+                            <h3>Daily reflection</h3>
+                        </div>
+                        @if (!string.IsNullOrEmpty(Model.Emotion))
+                        {
+                            <span class="entry-emotion">@Model.Emotion</span>
+                        }
+                    </div>
+                    <p><strong>Best part:</strong> @Model.BestPart</p>
+                    <p><strong>Was anything difficult?</strong> @Model.DifficultPart</p>
+                    <p><strong>How would you describe your day?</strong> @Model.DayDescription</p>
+                    <p><strong>Anything they would like help with?</strong> @(string.IsNullOrEmpty(Model.HelpRequired) ? "Not shared." : Model.HelpRequired)</p>
+                </article>
+            }
+            else
+            {
+                <article class="journal-entry">
+                    <div class="entry-heading">
+                        <div>
+                            <span class="card-kicker">October 13, 2026 · 7:48 PM</span>
+                            <h3>A busy day</h3>
+                        </div>
+                        <span class="entry-emotion">🌙 Tired</span>
+                    </div>
+                    <p><strong>Best part:</strong> Finished my art project.</p>
+                    <p><strong>Was anything difficult?</strong> Prefer not to answer.</p>
+                    <p><strong>How would you describe your day?</strong> Busy but okay.</p>
+                    <p><strong>Anything they would like help with?</strong> Not shared.</p>
+                </article>
+            }
+        </div>
+    </div>
+</div>

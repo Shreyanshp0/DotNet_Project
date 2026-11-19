@@ -1,3 +1,62 @@
-@{ ViewData["Title"] = "Journal history"; }
-@section Styles { <link rel="stylesheet" href="~/css/activities.css" asp-append-version="true" /> }
-<div class="activity-page"><div class="container activity-container"><a class="back-link" asp-action="Journal"><i class="bi bi-arrow-left"></i> Back to journal</a><div class="activity-heading"><span class="eyebrow">Your reflections</span><h1>Journal history</h1><p>These are the reflections you chose to submit. Your parent or guardian can also see them.</p></div><div class="journal-history-list"><article class="journal-entry"><div class="entry-heading"><div><span class="card-kicker">October 14, 2026</span><h3>Today felt steady</h3></div><span class="entry-emotion">🌿 Calm</span></div><p><strong>Best part:</strong> Had lunch with my friends.</p><p><strong>Anything difficult:</strong> Prefer not to answer.</p><p><strong>Help with:</strong> Not shared.</p><small>Submitted at 8:16 PM</small></article><article class="journal-entry"><div class="entry-heading"><div><span class="card-kicker">October 13, 2026</span><h3>A busy day</h3></div><span class="entry-emotion">🌙 Tired</span></div><p><strong>Best part:</strong> Finished my art project.</p><p><strong>Day description:</strong> Busy but okay.</p><p><strong>Help with:</strong> Not shared.</p><small>Submitted at 7:48 PM</small></article></div></div></div>
+@using DotNet_Project.Models
+@{
+    ViewData["Title"] = "Journal history";
+    var entries = ViewBag.Entries as List<JournalEntry> ?? new();
+}
+@section Styles {
+    <link rel="stylesheet" href="~/css/activities.css" asp-append-version="true" />
+}
+<div class="activity-page">
+    <div class="container activity-container">
+        <a class="back-link" asp-action="Journal"><i class="bi bi-arrow-left"></i> Back to journal</a>
+        <div class="activity-heading">
+            <span class="eyebrow">Your reflections</span>
+            <h1>Journal history</h1>
+            <p>These are the reflections you chose to submit. Your parent or guardian can also see them.</p>
+        </div>
+        <div class="journal-history-list">
+            @if (entries.Count > 0)
+            {
+                @foreach (var entry in entries)
+                {
+                    <article class="journal-entry">
+                        <div class="entry-heading">
+                            <div>
+                                <span class="card-kicker">@entry.EntryDate.ToString("MMMM dd, yyyy")</span>
+                                <h3>Reflection</h3>
+                            </div>
+                            @if (!string.IsNullOrEmpty(entry.Emotion))
+                            {
+                                <span class="entry-emotion">@entry.Emotion</span>
+                            }
+                        </div>
+                        <p><strong>Best part:</strong> @entry.BestPart</p>
+                        <p><strong>Anything difficult:</strong> @entry.DifficultPart</p>
+                        <p><strong>Day description:</strong> @entry.DayDescription</p>
+                        @if (!string.IsNullOrEmpty(entry.HelpRequired))
+                        {
+                            <p><strong>Help with:</strong> @entry.HelpRequired</p>
+                        }
+                        <small>Submitted at @entry.CreatedAt.ToLocalTime().ToString("h:mm tt")</small>
+                    </article>
+                }
+            }
+            else
+            {
+                <article class="journal-entry">
+                    <div class="entry-heading">
+                        <div>
+                            <span class="card-kicker">October 14, 2026</span>
+                            <h3>Today felt steady</h3>
+                        </div>
+                        <span class="entry-emotion">🌿 Calm</span>
+                    </div>
+                    <p><strong>Best part:</strong> Had lunch with my friends.</p>
+                    <p><strong>Anything difficult:</strong> Prefer not to answer.</p>
+                    <p><strong>Help with:</strong> Not shared.</p>
+                    <small>Submitted at 8:16 PM</small>
+                </article>
+            }
+        </div>
+    </div>
+</div>

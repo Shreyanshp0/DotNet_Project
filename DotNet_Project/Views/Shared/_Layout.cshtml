@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="utf-8" />
@@ -10,6 +10,7 @@
     @await RenderSectionAsync("Styles", required: false)
 </head>
 <body>
+    @Html.AntiForgeryToken()
     <header class="site-header">
         <nav class="navbar navbar-expand-lg">
             <div class="container">
@@ -26,7 +27,7 @@
                         <li class="nav-item"><a class="nav-link" href="/#about">About</a></li>
                         <li class="nav-item"><a class="nav-link" href="/#features">Features</a></li>
                         @if (User.IsInRole("Child")) { <li class="nav-item"><a class="nav-link" asp-controller="Child" asp-action="Index">Child dashboard</a></li> }
-                        @if (User.IsInRole("Parent")) { <li class="nav-item"><a class="nav-link" asp-controller="Parent" asp-action="Index">Parent dashboard</a></li><li class="nav-item"><a class="nav-link" asp-controller="Parent" asp-action="History">Assessment history</a></li> }
+                        @if (User.IsInRole("Parent")) { <li class="nav-item"><a class="nav-link" asp-controller="Parent" asp-action="Index">Parent dashboard</a></li><li class="nav-item"><a class="nav-link" asp-controller="Parent" asp-action="ChatHistory">Buddy conversations</a></li><li class="nav-item"><a class="nav-link" asp-controller="Parent" asp-action="History">Assessment history</a></li> }
                     </ul>
                     @if (!(User.Identity?.IsAuthenticated ?? false)) { <div class="d-flex align-items-center gap-2 mt-3 mt-lg-0 nav-actions nav-actions-guest">
                         <a class="btn btn-link nav-login" asp-controller="Account" asp-action="Login">Log in</a>

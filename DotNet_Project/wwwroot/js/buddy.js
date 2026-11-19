@@ -5,15 +5,17 @@ document.addEventListener('DOMContentLoaded', () => {
     const typing = document.getElementById('buddyTyping');
     const prompts = document.getElementById('buddyPrompts');
     const conversationId = document.getElementById('conversationId');
-    const storageKey = 'mindcare-buddy-conversation';
     const idKey = 'mindcare-buddy-conversation-id';
+    const getCsrfToken = () => document.querySelector('input[name="__RequestVerificationToken"]')?.value || '';
+
     if (!form || !input || !messages) return;
 
-    const id = sessionStorage.getItem(idKey) || (crypto.randomUUID ? crypto.randomUUID() : `buddy-${Date.now()}`);
+    const id = sessionStorage.getItem(idKey) || (crypto.randomUUID ? `conv-${crypto.randomUUID()}` : `conv-${Date.now()}`);
     sessionStorage.setItem(idKey, id);
-    conversationId.value = id;
+    if (conversationId) conversationId.value = id;
 
     const escapeHtml = value => value.replace(/[&<>'"]/g, character => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[character]));
+
     const renderMessage = (message, type, time = 'Just now') => {
         const item = document.createElement('div');
         item.className = `buddy-message buddy-message-${type}`;
@@ -22,55 +24,99 @@ document.addEventListener('DOMContentLoaded', () => {
         messages.appendChild(item);
         messages.scrollTop = messages.scrollHeight;
     };
-    const saveConversation = () => {
-        const items = [...messages.querySelectorAll('.buddy-message')].map(item => ({ type: item.classList.contains('buddy-message-user') ? 'user' : 'bot', text: item.querySelector('.message-bubble')?.textContent || '', time: item.querySelector('time')?.textContent || 'Just now' }));
-        sessionStorage.setItem(storageKey, JSON.stringify(items));
+
+    // Load initial history from server if conversation exists
+    const loadHistory = async () => {
+        try {
+            const res = await fetch(`/api/chat/history/${id}`);
+            if (res.ok) {
+                const data = await res.json();
+                if (data.messages && data.messages.length > 0) {
+                    messages.innerHTML = '';
+                    data.messages.forEach(m => {
+                        const type = m.sender === 'child' ? 'user' : 'bot';
+                        const time = new Date(m.createdAt).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+                        renderMessage(m.message, type, time);
+                    });
+                }
+            }
+        } catch {
+            // fallback
+        }
     };
-    const responseFor = message => {
-        const text = message.toLowerCase();
-        if (text.includes('sad')) return 'I am sorry you are having a sad moment. Would talking to a trusted adult or doing one small comforting thing help right now?';
-        if (text.includes('stress') || text.includes('school')) return 'School stress can feel like a lot. We could break one worry into a small next step, or you could talk with a teacher or trusted adult.';
-        if (text.includes('friend')) return 'Friends can bring both happy and tricky moments. What part would you like to talk about?';
-        if (text.includes('happy')) return 'That is lovely to hear! What is helping you feel happy today?';
-        if (text.includes('help') || text.includes('serious')) return 'You do not have to handle something serious alone. Please tell a trusted adult who can support you right now.';
-        return 'I am listening. You can tell me a little more, or choose one small thing you are feeling right now.';
-    };
-    const sendMessage = message => {
+    loadHistory();
+
+    const sendMessage = async message => {
         const text = message.trim();
         if (!text || typing.classList.contains('buddy-is-typing')) return;
+
         renderMessage(text, 'user');
         input.value = '';
         input.style.height = 'auto';
         typing.classList.remove('d-none');
         typing.classList.add('buddy-is-typing');
         prompts?.classList.add('buddy-prompts-muted');
-        saveConversation();
 
-        // Future integration seam: POST { Message: text, ConversationId: id } to form.dataset.endpoint.
-        window.setTimeout(() => {
+        const token = getCsrfToken();
+        try {
+            const endpoint = form.dataset.endpoint || '/Chat/SendMessage';
+            const res = await fetch(endpoint, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'RequestVerificationToken': token,
+                    'X-CSRF-TOKEN': token
+                },
+                body: JSON.stringify({ message: text, conversationId: id })
+            });
+
             typing.classList.add('d-none');
             typing.classList.remove('buddy-is-typing');
             prompts?.classList.remove('buddy-prompts-muted');
-            renderMessage(responseFor(text), 'bot');
-            saveConversation();
-        }, 850);
+
+            if (res.ok) {
+                const data = await res.json();
+                if (data.buddyReply) {
+                    renderMessage(data.buddyReply.message, 'bot');
+                }
+            } else {
+                renderMessage("I'm listening and I'm right here with you. Tell me a little more about how you're feeling.", 'bot');
+            }
+        } catch {
+            typing.classList.add('d-none');
+            typing.classList.remove('buddy-is-typing');
+            prompts?.classList.remove('buddy-prompts-muted');
+            renderMessage("I'm listening and I'm right here with you. Tell me a little more about how you're feeling.", 'bot');
+        }
     };
 
-    const saved = JSON.parse(sessionStorage.getItem(storageKey) || '[]');
-    if (saved.length) {
-        messages.innerHTML = '';
-        saved.forEach(item => renderMessage(item.text, item.type, item.time));
-    }
-    form.addEventListener('submit', event => { event.preventDefault(); sendMessage(input.value); });
-    input.addEventListener('keydown', event => {
-        if (event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); sendMessage(input.value); }
+    form.addEventListener('submit', event => {
+        event.preventDefault();
+        sendMessage(input.value);
     });
-    input.addEventListener('input', () => { input.style.height = 'auto'; input.style.height = `${Math.min(input.scrollHeight, 100)}px`; });
-    document.querySelectorAll('.prompt-chip').forEach(button => button.addEventListener('click', () => sendMessage(button.textContent)));
+
+    input.addEventListener('keydown', event => {
+        if (event.key === 'Enter' && !event.shiftKey) {
+            event.preventDefault();
+            sendMessage(input.value);
+        }
+    });
+
+    input.addEventListener('input', () => {
+        input.style.height = 'auto';
+        input.style.height = `${Math.min(input.scrollHeight, 100)}px`;
+    });
+
+    document.querySelectorAll('.prompt-chip').forEach(button => {
+        button.addEventListener('click', () => sendMessage(button.textContent.trim()));
+    });
+
     document.getElementById('clearConversation')?.addEventListener('click', () => {
-        sessionStorage.removeItem(storageKey);
+        const newId = `conv-${Date.now()}`;
+        sessionStorage.setItem(idKey, newId);
+        if (conversationId) conversationId.value = newId;
         messages.innerHTML = '';
-        renderMessage('Hi Alex! I’m MindCare Buddy. I’m happy to listen. How are you feeling today?', 'bot');
+        renderMessage('Hi! I’m MindCare Buddy. I’m happy to listen. How are you feeling today?', 'bot');
         input.focus();
     });
 });

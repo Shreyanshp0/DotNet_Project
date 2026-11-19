@@ -56,12 +56,15 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
             e.Property(x => x.DifficultPart).HasMaxLength(4000).IsRequired();
             e.Property(x => x.DayDescription).HasMaxLength(4000).IsRequired();
             e.Property(x => x.HelpRequired).HasMaxLength(2000);
+            e.Property(x => x.Emotion).HasMaxLength(50);
             e.HasIndex(x => new { x.ChildProfileId, x.EntryDate }).IsUnique();
             e.HasOne(x => x.ChildProfile).WithMany(x => x.JournalEntries).HasForeignKey(x => x.ChildProfileId).OnDelete(DeleteBehavior.Restrict);
         });
         builder.Entity<AIReport>(e =>
         {
             e.Property(x => x.AssessmentId).IsRequired();
+            e.Property(x => x.OverallPattern).HasMaxLength(50);
+            e.Property(x => x.CategoryScoresJson).HasMaxLength(2000);
             e.HasIndex(x => x.AssessmentId).IsUnique();
             e.HasOne(x => x.Assessment).WithOne(x => x.AIReport).HasForeignKey<AIReport>(x => x.AssessmentId).OnDelete(DeleteBehavior.Restrict);
         });

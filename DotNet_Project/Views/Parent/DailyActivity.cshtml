@@ -1,4 +1,153 @@
-@{ ViewData["Title"] = "Child's daily activity"; }
-@section Styles { <link rel="stylesheet" href="~/css/activities.css" asp-append-version="true" /><link rel="stylesheet" href="~/css/dashboard.css" asp-append-version="true" /> }
-<div class="activity-page parent-activity-page"><div class="container"><div class="activity-toolbar"><a class="back-link" asp-action="Index"><i class="bi bi-arrow-left"></i> Parent dashboard</a><a class="btn btn-outline-secondary btn-sm" asp-action="Report" asp-route-id="1042">View AI report</a></div><div class="activity-heading"><span class="eyebrow">Child's Daily Activity</span><h1>Alex's activity timeline</h1><p>Select a date to review mood entries, questionnaire responses, and journal reflections.</p></div><div class="date-selector"><button class="date-choice" data-date="2026-10-14"><strong>Today</strong><small>Oct 14</small></button><button class="date-choice active" data-date="2026-10-13"><strong>Yesterday</strong><small>Oct 13</small></button><button class="date-choice" data-date="2026-10-07"><strong>Oct 07</strong><small>Assessment</small></button></div><div class="activity-date-label" id="activityDateLabel">Activity for October 13, 2026</div><div class="row g-4"><div class="col-lg-7"><section class="activity-card"><div class="d-flex justify-content-between align-items-center mb-3"><div><span class="card-kicker">Mood history</span><h3>Check-ins</h3></div><span class="activity-count">2 entries</span></div><div class="entry-list" id="parentMoodEntries"><div class="entry-row"><span class="entry-emoji">😄</span><div><strong>Great</strong><small>Had fun at art club</small></div><time>8:25 AM</time></div><div class="entry-row"><span class="entry-emoji">🙂</span><div><strong>Good</strong><small>No explanation shared</small></div><time>4:40 PM</time></div></div></section><section class="activity-card mt-4"><div class="d-flex justify-content-between align-items-center mb-3"><div><span class="card-kicker">Questionnaire responses</span><h3>Wellbeing assessment</h3></div><span class="activity-status status-complete">Submitted Oct 07</span></div><p class="text-muted small">The latest 10-question assessment is available to review.</p><a class="btn btn-outline-primary" asp-action="QuestionnaireDetails">View all responses <i class="bi bi-arrow-right ms-2"></i></a></section></div><div class="col-lg-5"><section class="activity-card journal-preview"><span class="card-kicker">Journal history</span><h3>Alex's reflection</h3><span class="entry-emotion">🌿 Calm</span><p class="journal-quote" id="parentJournalQuote">“Finished my art project and had lunch with my friends.”</p><p class="small text-muted" id="parentJournalDate">Submitted October 13 at 7:48 PM</p><a class="text-link" asp-action="JournalDetails">View journal entries <i class="bi bi-arrow-right"></i></a></section><section class="empty-state-card mt-4"><i class="bi bi-shield-check"></i><p><strong>Respecting Alex's privacy</strong><br>Only entries Alex chooses to submit are shown here.</p></section></div></div></div></div>
-@section Scripts { <script src="~/js/activities.js" asp-append-version="true"></script> }
+@model DotNet_Project.DTOs.ParentDailyActivityResponse
+@{
+    ViewData["Title"] = "Child's daily activity";
+    var activeChild = ViewBag.ActiveChild as DotNet_Project.Models.ChildProfile;
+    var childName = activeChild?.ChildName ?? Model?.ChildName ?? "Alex";
+    var childId = activeChild?.Id ?? 0;
+    var currentDate = Model?.Date ?? DateTime.UtcNow.ToString("yyyy-MM-dd");
+    var moods = Model?.MoodEntries ?? new List<DotNet_Project.DTOs.MoodResponse>();
+    var journal = Model?.Journal;
+    var latestAssessment = Model?.LatestAssessment;
+    var today = DateTime.UtcNow.Date;
+    var todayStr = today.ToString("yyyy-MM-dd");
+    var yesterdayStr = today.AddDays(-1).ToString("yyyy-MM-dd");
+    var children = ViewBag.Children as List<DotNet_Project.Models.ChildProfile> ?? new();
+}
+@section Styles {
+    <link rel="stylesheet" href="~/css/activities.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/dashboard.css" asp-append-version="true" />
+}
+<div class="activity-page parent-activity-page" data-child-id="@childId">
+    <div class="container">
+        <div class="activity-toolbar">
+            <a class="back-link" asp-action="Index"><i class="bi bi-arrow-left"></i> Parent dashboard</a>
+            <div class="d-flex gap-2">
+                <a class="btn btn-outline-info btn-sm" asp-action="ChatHistory" asp-route-childId="@childId"><i class="bi bi-chat-dots me-1"></i> Buddy chat</a>
+                @if (latestAssessment is not null)
+                {
+                    <a class="btn btn-outline-secondary btn-sm" asp-action="Report" asp-route-id="@latestAssessment.Id">View AI report</a>
+                }
+            </div>
+        </div>
+        <div class="activity-heading">
+            <span class="eyebrow">Child's Daily Activity</span>
+            <h1>@childName's activity timeline</h1>
+            <p>Select a date to review mood entries, questionnaire responses, and journal reflections.</p>
+        </div>
+
+        @if (children.Count > 1)
+        {
+            <div class="mb-3 d-flex gap-2 align-items-center">
+                <span class="small text-muted">Select child:</span>
+                @foreach (var c in children)
+                {
+                    <a asp-action="DailyActivity" asp-route-childId="@c.Id" class="btn btn-sm @(c.Id == childId ? "btn-primary" : "btn-outline-secondary")">@c.ChildName</a>
+                }
+            </div>
+        }
+
+        <div class="date-selector">
+            <button class="date-choice @(currentDate == todayStr ? "active" : "")" data-date="@todayStr">
+                <strong>Today</strong>
+                <small>@today.ToString("MMM dd")</small>
+            </button>
+            <button class="date-choice @(currentDate == yesterdayStr ? "active" : "")" data-date="@yesterdayStr">
+                <strong>Yesterday</strong>
+                <small>@today.AddDays(-1).ToString("MMM dd")</small>
+            </button>
+            @if (latestAssessment is not null && latestAssessment.AssessmentDate != todayStr && latestAssessment.AssessmentDate != yesterdayStr)
+            {
+                <button class="date-choice @(currentDate == latestAssessment.AssessmentDate ? "active" : "")" data-date="@latestAssessment.AssessmentDate">
+                    <strong>Check-in</strong>
+                    <small>@latestAssessment.AssessmentDate</small>
+                </button>
+            }
+        </div>
+
+        <div class="activity-date-label" id="activityDateLabel">Activity for @currentDate</div>
+
+        <div class="row g-4">
+            <div class="col-lg-7">
+                <section class="activity-card">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <div><span class="card-kicker">Mood history</span><h3>Check-ins</h3></div>
+                        <span class="activity-count" id="moodCountLabel">@moods.Count @(moods.Count == 1 ? "entry" : "entries")</span>
+                    </div>
+                    <div class="entry-list" id="parentMoodEntries">
+                        @if (moods.Count == 0)
+                        {
+                            <div class="text-muted small py-3" id="parentMoodEmpty">No mood check-ins recorded for this date.</div>
+                        }
+                        else
+                        {
+                            @foreach (var m in moods)
+                            {
+                                var emoji = m.Mood switch { "Great" => "😄", "Good" => "😊", "Okay" => "😐", "Low" => "😟", "Worried" => "😢", _ => "🙂" };
+                                <div class="entry-row">
+                                    <span class="entry-emoji">@emoji</span>
+                                    <div>
+                                        <strong>@m.Mood</strong>
+                                        <small>@(string.IsNullOrEmpty(m.Reason) ? "No explanation shared" : m.Reason)</small>
+                                    </div>
+                                    <time>@m.CreatedAt.ToLocalTime().ToString("h:mm tt")</time>
+                                </div>
+                            }
+                        }
+                    </div>
+                </section>
+
+                <section class="activity-card mt-4">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <div>
+                            <span class="card-kicker">Questionnaire responses</span>
+                            <h3>Wellbeing assessment</h3>
+                        </div>
+                        @if (latestAssessment is not null)
+                        {
+                            <span class="activity-status status-complete">Submitted @latestAssessment.AssessmentDate</span>
+                        }
+                        else
+                        {
+                            <span class="activity-status status-neutral">No assessments yet</span>
+                        }
+                    </div>
+                    <p class="text-muted small">The latest 10-question assessment is available to review.</p>
+                    @if (latestAssessment is not null)
+                    {
+                        <a class="btn btn-outline-primary" asp-action="QuestionnaireDetails" asp-route-id="@latestAssessment.Id" asp-route-childId="@childId">View all responses <i class="bi bi-arrow-right ms-2"></i></a>
+                    }
+                </section>
+            </div>
+
+            <div class="col-lg-5">
+                <section class="activity-card journal-preview">
+                    <span class="card-kicker">Journal history</span>
+                    <h3>@childName's reflection</h3>
+                    @if (journal is not null)
+                    {
+                        @if (!string.IsNullOrEmpty(journal.Emotion))
+                        {
+                            <span class="entry-emotion">@journal.Emotion</span>
+                        }
+                        <p class="journal-quote" id="parentJournalQuote">“@journal.BestPart”</p>
+                        <p class="small text-muted" id="parentJournalDate">Submitted @journal.SubmittedAt.ToLocalTime().ToString("MMMM dd at h:mm tt")</p>
+                        <a class="text-link" asp-action="JournalDetails" asp-route-id="@journal.Id" asp-route-childId="@childId">View journal details <i class="bi bi-arrow-right"></i></a>
+                    }
+                    else
+                    {
+                        <p class="journal-quote text-muted" id="parentJournalQuote">No journal submitted for this date.</p>
+                        <p class="small text-muted" id="parentJournalDate">No entry available</p>
+                    }
+                </section>
+
+                <section class="empty-state-card mt-4">
+                    <i class="bi bi-shield-check"></i>
+                    <p><strong>Respecting @childName's privacy</strong><br>Only entries @childName chooses to submit are shown here.</p>
+                </section>
+            </div>
+        </div>
+    </div>
+</div>
+@section Scripts {
+    <script src="~/js/activities.js" asp-append-version="true"></script>
+}

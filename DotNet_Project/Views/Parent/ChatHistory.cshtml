@@ -1,0 +1,216 @@
+@model DotNet_Project.DTOs.ParentChildChatHistoryResponse
+@using DotNet_Project.Models
+@{
+    ViewData["Title"] = "Buddy Chat History";
+    ViewData["PageClass"] = "dashboard-page";
+    var activeChild = ViewBag.ActiveChild as ChildProfile;
+    var children = ViewBag.Children as List<ChildProfile> ?? new();
+    var childName = activeChild?.ChildName ?? Model?.ChildName ?? "Child";
+    var childId = activeChild?.Id ?? Model?.ChildProfileId ?? 0;
+    var messages = Model?.Messages ?? new();
+    var groupedByConv = messages.GroupBy(m => m.ConversationId).ToList();
+}
+@section Styles {
+    <link rel="stylesheet" href="~/css/dashboard.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/buddy.css" asp-append-version="true" />
+    <style>
+        .chat-history-page {
+            padding: 2.5rem 0 5rem;
+        }
+        .chat-session-card {
+            background: #ffffff;
+            border: 1px solid var(--line, #e2e8f0);
+            border-radius: 20px;
+            box-shadow: 0 4px 14px rgba(0,0,0,0.04);
+            margin-bottom: 2rem;
+            overflow: hidden;
+        }
+        .chat-session-header {
+            background: #f8fafc;
+            border-bottom: 1px solid var(--line, #e2e8f0);
+            padding: 1rem 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+        .chat-session-body {
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1.25rem;
+            background: #ffffff;
+        }
+        .transcript-bubble-wrap {
+            display: flex;
+            gap: 0.75rem;
+            max-width: 82%;
+        }
+        .transcript-user {
+            align-self: flex-end;
+            flex-direction: row-reverse;
+        }
+        .transcript-bot {
+            align-self: flex-start;
+        }
+        .transcript-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+            flex-shrink: 0;
+        }
+        .transcript-bot .transcript-avatar {
+            background: #edeafd;
+            color: #6366f1;
+        }
+        .transcript-user .transcript-avatar {
+            background: #e3f4ee;
+            color: #0d9488;
+        }
+        .transcript-bubble {
+            padding: 0.85rem 1.15rem;
+            border-radius: 16px;
+            font-size: 0.92rem;
+            line-height: 1.5;
+            position: relative;
+        }
+        .transcript-bot .transcript-bubble {
+            background: #f1f5f9;
+            color: #1e293b;
+            border-top-left-radius: 4px;
+        }
+        .transcript-user .transcript-bubble {
+            background: #e6f7f2;
+            color: #064e3b;
+            border-top-right-radius: 4px;
+        }
+        .transcript-meta {
+            font-size: 0.72rem;
+            color: #64748b;
+            margin-top: 0.35rem;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+        .transcript-user .transcript-meta {
+            justify-content: flex-end;
+        }
+        .ai-badge {
+            background: #edeafd;
+            color: #6366f1;
+            font-weight: 600;
+            font-size: 0.72rem;
+            padding: 0.2rem 0.6rem;
+            border-radius: 50px;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+        }
+    </style>
+}
+
+<div class="chat-history-page">
+    <div class="container" style="max-width: 1040px;">
+        <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
+            <a class="back-link text-decoration-none text-muted" asp-action="Index">
+                <i class="bi bi-arrow-left"></i> Back to Parent dashboard
+            </a>
+            <div class="d-flex gap-2">
+                <a asp-action="DailyActivity" asp-route-childId="@childId" class="btn btn-outline-primary btn-sm">
+                    <i class="bi bi-activity me-1"></i> Daily Activity
+                </a>
+                <a asp-action="Report" class="btn btn-outline-secondary btn-sm">
+                    <i class="bi bi-clipboard-pulse me-1"></i> Latest AI Report
+                </a>
+            </div>
+        </div>
+
+        <div class="mb-4">
+            <div class="d-flex align-items-center gap-2 mb-1">
+                <span class="eyebrow text-uppercase fw-bold text-primary small">Parental Transparency &amp; Safety</span>
+                <span class="ai-badge"><i class="bi bi-stars"></i> Powered by Google Gemini</span>
+            </div>
+            <h1 class="h2 fw-bold">@childName's MindCare Buddy Conversations</h1>
+            <p class="text-muted">
+                Review the live AI conversations and questions shared between @childName and MindCare Buddy.
+                This allows you to stay closely informed about their thoughts, concerns, and emotional well-being.
+            </p>
+        </div>
+
+        @if (children.Count > 1)
+        {
+            <div class="mb-4 p-3 bg-white rounded-3 border d-flex gap-2 align-items-center flex-wrap">
+                <span class="small fw-semibold text-muted me-1">Select child:</span>
+                @foreach (var c in children)
+                {
+                    <a asp-action="ChatHistory" asp-route-childId="@c.Id"
+                       class="btn btn-sm @(c.Id == childId ? "btn-primary" : "btn-outline-secondary")">
+                        <i class="bi bi-person me-1"></i>@c.ChildName
+                    </a>
+                }
+            </div>
+        }
+
+        @if (messages.Count == 0)
+        {
+            <div class="dashboard-card text-center py-5">
+                <div class="buddy-avatar buddy-avatar-large mx-auto mb-3" style="width: 72px; height: 72px; font-size: 1.8rem; background: #eef2ff; color: #6366f1; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                    <i class="bi bi-chat-heart"></i>
+                </div>
+                <h3>No conversation history yet</h3>
+                <p class="text-muted mx-auto" style="max-width: 480px;">
+                    @childName has not chatted with MindCare Buddy yet. When they start a conversation, the full live transcript and discussion flow will be visible here.
+                </p>
+            </div>
+        }
+        else
+        {
+            @foreach (var group in groupedByConv)
+            {
+                var groupMessages = group.OrderBy(m => m.CreatedAt).ToList();
+                var firstMsg = groupMessages.First();
+                var lastMsg = groupMessages.Last();
+
+                <div class="chat-session-card">
+                    <div class="chat-session-header">
+                        <div class="d-flex align-items-center gap-2">
+                            <i class="bi bi-chat-quote-fill text-primary"></i>
+                            <strong>Session:</strong>
+                            <code class="small text-muted bg-white px-2 py-1 rounded border">@group.Key</code>
+                        </div>
+                        <div class="small text-muted d-flex align-items-center gap-3">
+                            <span><i class="bi bi-clock me-1"></i>@firstMsg.CreatedAt.ToLocalTime().ToString("MMM dd, yyyy h:mm tt")</span>
+                            <span class="badge bg-light text-dark border">@groupMessages.Count messages</span>
+                        </div>
+                    </div>
+                    <div class="chat-session-body">
+                        @foreach (var msg in groupMessages)
+                        {
+                            var isUser = msg.Sender == "child";
+                            <div class="transcript-bubble-wrap @(isUser ? "transcript-user" : "transcript-bot")">
+                                <div class="transcript-avatar">
+                                    <i class="bi @(isUser ? "bi-person-fill" : "bi-stars")"></i>
+                                </div>
+                                <div>
+                                    <div class="transcript-bubble">
+                                        @msg.Message
+                                    </div>
+                                    <div class="transcript-meta">
+                                        <span>@(isUser ? childName : "MindCare Buddy")</span>
+                                        <span>&bull;</span>
+                                        <span>@msg.CreatedAt.ToLocalTime().ToString("h:mm tt")</span>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            }
+        }
+    </div>
+</div>

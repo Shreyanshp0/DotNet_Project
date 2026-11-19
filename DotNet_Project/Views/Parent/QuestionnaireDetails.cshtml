@@ -1,3 +1,61 @@
-@{ ViewData["Title"] = "Questionnaire responses"; }
-@section Styles { <link rel="stylesheet" href="~/css/activities.css" asp-append-version="true" /> }
-<div class="activity-page parent-activity-page"><div class="container activity-container"><a class="back-link" asp-action="DailyActivity"><i class="bi bi-arrow-left"></i> Back to daily activity</a><div class="activity-heading"><span class="eyebrow">Submitted October 07, 2026</span><h1>Alex's questionnaire responses</h1><p>These are the answers recorded for assessment MC-1042. They are shown for conversation and context only.</p></div><div class="response-list">@{ var responses = new[] { ("01 · Emotional well-being", "Do you feel happy most of the time?", "Often"), ("02 · Emotional well-being", "Do you feel able to talk about your feelings?", "Sometimes"), ("03 · Academic stress", "Do you feel stressed about schoolwork?", "Sometimes"), ("04 · Academic stress", "Do you feel able to focus when you study?", "Often"), ("05 · Social relationships", "Do you feel comfortable talking to your friends?", "Always"), ("06 · Social relationships", "Do you feel included by other children?", "Often"), ("07 · Sleep and lifestyle", "Do you get enough sleep?", "Sometimes"), ("08 · Sleep and lifestyle", "Do you make time for things you enjoy?", "Often"), ("09 · Self-confidence", "Do you feel confident about yourself?", "Often"), ("10 · Self-confidence", "Do you feel proud when you learn something new?", "Always") }; } @foreach (var response in responses) { <article class="response-item"><span class="question-category">@response.Item1</span><h3>@response.Item2</h3><span class="answer-badge">@response.Item3</span></article> }</div><div class="disclaimer mt-4"><i class="bi bi-info-circle"></i><p class="mb-0">These responses are not a diagnosis and should be discussed with care. Contact a qualified professional if you have concerns.</p></div></div></div>
+@model DotNet_Project.DTOs.AssessmentAnswersResponse
+@{
+    ViewData["Title"] = "Questionnaire responses";
+    var childName = Model?.ChildName ?? "Alex";
+    var assessmentDate = Model?.AssessmentDate ?? "October 07, 2026";
+    var assessmentId = Model?.AssessmentId ?? 1042;
+    var answers = Model?.Answers;
+}
+@section Styles {
+    <link rel="stylesheet" href="~/css/activities.css" asp-append-version="true" />
+}
+<div class="activity-page parent-activity-page">
+    <div class="container activity-container">
+        <a class="back-link" asp-action="DailyActivity"><i class="bi bi-arrow-left"></i> Back to daily activity</a>
+        <div class="activity-heading">
+            <span class="eyebrow">Submitted @assessmentDate</span>
+            <h1>@childName's questionnaire responses</h1>
+            <p>These are the answers recorded for assessment MC-@assessmentId. They are shown for conversation and context only.</p>
+        </div>
+        <div class="response-list">
+            @if (answers != null && answers.Count > 0)
+            {
+                @foreach (var response in answers)
+                {
+                    <article class="response-item">
+                        <span class="question-category">@(response.Category ?? "Wellbeing")</span>
+                        <h3>@response.QuestionText</h3>
+                        <span class="answer-badge">@response.Answer</span>
+                    </article>
+                }
+            }
+            else
+            {
+                var fallbackResponses = new[] {
+                    ("Emotional well-being", "Do you feel happy most of the time?", "Often"),
+                    ("Emotional well-being", "Do you feel able to talk about your feelings?", "Sometimes"),
+                    ("Academic stress", "Do you feel stressed about schoolwork?", "Sometimes"),
+                    ("Academic stress", "Do you feel able to focus when you study?", "Often"),
+                    ("Social relationships", "Do you feel comfortable talking to your friends?", "Always"),
+                    ("Social relationships", "Do you feel included by other children?", "Often"),
+                    ("Sleep and lifestyle", "Do you get enough sleep?", "Sometimes"),
+                    ("Sleep and lifestyle", "Do you make time for things you enjoy?", "Often"),
+                    ("Self-confidence", "Do you feel confident about yourself?", "Often"),
+                    ("Self-confidence", "Do you feel proud when you learn something new?", "Always")
+                };
+                @foreach (var response in fallbackResponses)
+                {
+                    <article class="response-item">
+                        <span class="question-category">@response.Item1</span>
+                        <h3>@response.Item2</h3>
+                        <span class="answer-badge">@response.Item3</span>
+                    </article>
+                }
+            }
+        </div>
+        <div class="disclaimer mt-4">
+            <i class="bi bi-info-circle"></i>
+            <p class="mb-0">These responses are not a diagnosis and should be discussed with care. Contact a qualified professional if you have concerns.</p>
+        </div>
+    </div>
+</div>

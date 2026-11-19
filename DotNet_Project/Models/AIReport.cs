@@ -8,6 +8,8 @@ public class AIReport
     public string Strengths { get; set; } = string.Empty;
     public string AreasOfConcern { get; set; } = string.Empty;
     public string Suggestions { get; set; } = string.Empty;
+    public string? CategoryScoresJson { get; set; }
+    public string OverallPattern { get; set; } = "Positive";
     public DateTime GeneratedAt { get; set; } = DateTime.UtcNow;
     public Assessment Assessment { get; set; } = null!;
 }
