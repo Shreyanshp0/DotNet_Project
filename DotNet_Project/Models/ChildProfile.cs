@@ -16,4 +16,6 @@ public class ChildProfile
     public ICollection<Assessment> Assessments { get; set; } = new List<Assessment>();
     public ICollection<JournalEntry> JournalEntries { get; set; } = new List<JournalEntry>();
     public ICollection<ChatMessage> ChatMessages { get; set; } = new List<ChatMessage>();
+    public ICollection<ExerciseSession> ExerciseSessions { get; set; } = new List<ExerciseSession>();
+    public ICollection<WeeklyInsight> WeeklyInsights { get; set; } = new List<WeeklyInsight>();
 }

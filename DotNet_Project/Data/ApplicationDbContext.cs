@@ -12,8 +12,11 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
     public DbSet<Assessment> Assessments => Set<Assessment>();
     public DbSet<AssessmentAnswer> AssessmentAnswers => Set<AssessmentAnswer>();
     public DbSet<JournalEntry> JournalEntries => Set<JournalEntry>();
+    public DbSet<JournalSentimentAnalysis> JournalSentimentAnalyses => Set<JournalSentimentAnalysis>();
     public DbSet<AIReport> AIReports => Set<AIReport>();
     public DbSet<ChatMessage> ChatMessages => Set<ChatMessage>();
+    public DbSet<ExerciseSession> ExerciseSessions => Set<ExerciseSession>();
+    public DbSet<WeeklyInsight> WeeklyInsights => Set<WeeklyInsight>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -60,6 +63,14 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
             e.HasIndex(x => new { x.ChildProfileId, x.EntryDate }).IsUnique();
             e.HasOne(x => x.ChildProfile).WithMany(x => x.JournalEntries).HasForeignKey(x => x.ChildProfileId).OnDelete(DeleteBehavior.Restrict);
         });
+        builder.Entity<JournalSentimentAnalysis>(e =>
+        {
+            e.Property(x => x.Sentiment).HasMaxLength(20).IsRequired();
+            e.Property(x => x.EmotionIndicators).HasMaxLength(500).IsRequired();
+            e.Property(x => x.AIInsight).HasMaxLength(1000).IsRequired();
+            e.HasIndex(x => x.JournalEntryId).IsUnique();
+            e.HasOne(x => x.JournalEntry).WithOne(x => x.SentimentAnalysis).HasForeignKey<JournalSentimentAnalysis>(x => x.JournalEntryId).OnDelete(DeleteBehavior.Cascade);
+        });
         builder.Entity<AIReport>(e =>
         {
             e.Property(x => x.AssessmentId).IsRequired();
@@ -75,6 +86,22 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
             e.Property(x => x.Message).HasMaxLength(4000).IsRequired();
             e.HasIndex(x => new { x.ChildProfileId, x.ConversationId, x.CreatedAt });
             e.HasOne(x => x.ChildProfile).WithMany(x => x.ChatMessages).HasForeignKey(x => x.ChildProfileId).OnDelete(DeleteBehavior.Restrict);
+        });
+        builder.Entity<ExerciseSession>(e =>
+        {
+            e.Property(x => x.ExerciseType).HasMaxLength(40).IsRequired();
+            e.HasIndex(x => new { x.ChildProfileId, x.CompletedAt });
+            e.HasOne(x => x.ChildProfile).WithMany(x => x.ExerciseSessions).HasForeignKey(x => x.ChildProfileId).OnDelete(DeleteBehavior.Restrict);
+        });
+        builder.Entity<WeeklyInsight>(e =>
+        {
+            e.Property(x => x.Summary).HasMaxLength(2000).IsRequired();
+            e.Property(x => x.ObservationsJson).HasMaxLength(4000).IsRequired();
+            e.Property(x => x.AreasForSupportJson).HasMaxLength(4000).IsRequired();
+            e.Property(x => x.RecommendationsJson).HasMaxLength(4000).IsRequired();
+            e.Property(x => x.DataLimitationsJson).HasMaxLength(2000).IsRequired();
+            e.HasIndex(x => new { x.ChildProfileId, x.WeekStartDate }).IsUnique();
+            e.HasOne(x => x.ChildProfile).WithMany(x => x.WeeklyInsights).HasForeignKey(x => x.ChildProfileId).OnDelete(DeleteBehavior.Restrict);
         });
     }
 }

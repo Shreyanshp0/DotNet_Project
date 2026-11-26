@@ -11,7 +11,9 @@ public interface IJournalService
     Task<JournalHistoryResponse> GetHistoryAsync(int childProfileId, int page = 1, int size = 10);
 }
 
-public class JournalService(ApplicationDbContext db) : IJournalService
+public class JournalService(
+    ApplicationDbContext db,
+    IJournalSentimentService? sentimentService = null) : IJournalService
 {
     private static readonly HashSet<string> ValidEmotions = new(StringComparer.OrdinalIgnoreCase)
     {
@@ -55,6 +57,18 @@ public class JournalService(ApplicationDbContext db) : IJournalService
         catch (DbUpdateException)
         {
             return (null, "A journal entry for today already exists.", null);
+        }
+
+        if (sentimentService is not null)
+        {
+            try
+            {
+                await sentimentService.AnalyzeAndSaveAsync(entry.Id);
+            }
+            catch
+            {
+                // AI analysis failure must never block or fail journal submission.
+            }
         }
 
         return (new JournalSubmitResponse

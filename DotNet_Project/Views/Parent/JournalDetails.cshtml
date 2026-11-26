@@ -9,7 +9,7 @@
 }
 <div class="activity-page parent-activity-page">
     <div class="container activity-container">
-        <a class="back-link" asp-action="DailyActivity"><i class="bi bi-arrow-left"></i> Back to daily activity</a>
+        <a class="back-link" asp-action="DailyActivity" asp-route-childId="@(activeChild?.Id)"><i class="bi bi-arrow-left"></i> Back to daily activity</a>
         <div class="activity-heading">
             <span class="eyebrow">Shared reflections</span>
             <h1>@childName's journal entry</h1>
@@ -42,17 +42,7 @@
             else
             {
                 <article class="journal-entry">
-                    <div class="entry-heading">
-                        <div>
-                            <span class="card-kicker">October 13, 2026 · 7:48 PM</span>
-                            <h3>A busy day</h3>
-                        </div>
-                        <span class="entry-emotion">🌙 Tired</span>
-                    </div>
-                    <p><strong>Best part:</strong> Finished my art project.</p>
-                    <p><strong>Was anything difficult?</strong> Prefer not to answer.</p>
-                    <p><strong>How would you describe your day?</strong> Busy but okay.</p>
-                    <p><strong>Anything they would like help with?</strong> Not shared.</p>
+                    <p class="text-muted mb-0">No journal entry found for @childName.</p>
                 </article>
             }
         </div>

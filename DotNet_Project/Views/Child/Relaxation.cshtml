@@ -1,0 +1,48 @@
+@{
+    ViewData["Title"] = "Relaxation Corner";
+}
+@section Styles {
+    <link rel="stylesheet" href="~/css/relaxation.css" asp-append-version="true" />
+}
+<div class="relax-page">
+    <div class="container relax-container">
+        <a asp-action="Index" class="back-link"><i class="bi bi-arrow-left"></i> Back to Child Dashboard</a>
+        <div class="relax-hero">
+            <span class="eyebrow"><i class="bi bi-stars"></i> Take a calm break</span>
+            <h1>Relaxation Corner</h1>
+            <p class="text-muted mb-0">Choose an activity whenever you want to pause, catch your breath, or notice kind thoughts. There is no rush and no right or wrong way.</p>
+        </div>
+
+        <div class="row g-4">
+            <div class="col-md-4">
+                <article class="relax-card relax-card-blue">
+                    <span class="relax-icon blue"><i class="bi bi-wind"></i></span>
+                    <span class="card-kicker">Breathing</span>
+                    <h3>Breathing Exercises</h3>
+                    <p class="text-muted small mb-4">Follow a slow, gentle breathing circle at your own pace, with or without breath holds.</p>
+                    <a asp-action="Breathing" class="btn btn-primary mt-auto">Start breathing <i class="bi bi-arrow-right ms-1"></i></a>
+                </article>
+            </div>
+
+            <div class="col-md-4">
+                <article class="relax-card relax-card-mint">
+                    <span class="relax-icon mint"><i class="bi bi-compass"></i></span>
+                    <span class="card-kicker">Grounding</span>
+                    <h3>5-4-3-2-1 Grounding</h3>
+                    <p class="text-muted small mb-4">Use your five senses to gently bring your attention back to the space around you.</p>
+                    <a asp-action="Grounding" class="btn btn-outline-primary mt-auto">Start grounding <i class="bi bi-arrow-right ms-1"></i></a>
+                </article>
+            </div>
+
+            <div class="col-md-4">
+                <article class="relax-card relax-card-peach">
+                    <span class="relax-icon peach"><i class="bi bi-heart"></i></span>
+                    <span class="card-kicker">Encouragement</span>
+                    <h3>Positive Affirmations</h3>
+                    <p class="text-muted small mb-4">Read gentle reminders, shuffle the deck, and save your favourite phrases.</p>
+                    <a asp-action="Affirmations" class="btn btn-outline-primary mt-auto">Browse affirmations <i class="bi bi-arrow-right ms-1"></i></a>
+                </article>
+            </div>
+        </div>
+    </div>
+</div>

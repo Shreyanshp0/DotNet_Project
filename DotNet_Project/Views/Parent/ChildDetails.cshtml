@@ -1,8 +1,11 @@
 @model DotNet_Project.Models.ChildProfile
+@using DotNet_Project.DTOs
 @{
     ViewData["Title"] = $"{Model.ChildName} - Details";
     ViewData["PageClass"] = "dashboard-page";
     var mustChange = Model.ChildUser?.MustChangePassword ?? false;
+    var insights = ViewBag.JournalInsights as List<JournalInsightDto> ?? new();
+    var recentRelaxation = ViewBag.RecentRelaxation as List<DotNet_Project.Models.ExerciseSession> ?? new();
 }
 @section Styles {
     <link rel="stylesheet" href="~/css/dashboard.css" asp-append-version="true" />
@@ -19,6 +22,10 @@
             <a asp-action="DailyActivity" asp-route-childId="@Model.Id" class="btn btn-primary">Daily Activity <i class="bi bi-activity ms-1"></i></a>
         </div>
 
+        @if (TempData["SuccessMessage"] is string okMsg)
+        {
+            <div class="alert alert-success">@okMsg</div>
+        }
         @if (TempData["ErrorMessage"] is string err)
         {
             <div class="alert alert-danger">@err</div>
@@ -74,8 +81,131 @@
                 <a asp-action="DailyActivity" asp-route-childId="@Model.Id" class="btn btn-primary btn-sm">Daily Activity <i class="bi bi-activity ms-1"></i></a>
                 <a asp-action="ChatHistory" asp-route-childId="@Model.Id" class="btn btn-outline-secondary btn-sm">Buddy Conversations</a>
                 <a asp-action="History" asp-route-childId="@Model.Id" class="btn btn-outline-secondary btn-sm">Assessment History</a>
-                <a asp-action="Report" class="btn btn-outline-secondary btn-sm">Latest AI Report</a>
+                <a asp-action="Report" asp-route-childId="@Model.Id" class="btn btn-outline-secondary btn-sm">Latest AI Report</a>
             </div>
+        </div>
+
+        <div class="dashboard-card mt-4">
+            <div class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-3">
+                <div>
+                    <span class="card-kicker">Journal insights</span>
+                    <h3 class="mb-1">Historical journal reflections</h3>
+                </div>
+            </div>
+            <div class="disclaimer mb-3 mt-0">
+                <i class="bi bi-info-circle"></i>
+                <p class="mb-0">AI-generated interpretation based on journal language. It is not a clinical assessment or diagnosis.</p>
+            </div>
+
+            @if (insights.Count == 0)
+            {
+                <p class="text-muted small mb-0">No journal entries have been submitted yet.</p>
+            }
+            else
+            {
+                <div class="row g-3">
+                    @foreach (var item in insights)
+                    {
+                        var sentimentStyle = item.Sentiment switch
+                        {
+                            "Positive" => "background:#e8f6f0; color:#2f7d65;",
+                            "Neutral" => "background:#f1f5f9; color:#475569;",
+                            "Mixed" => "background:#edeafd; color:#5b4bb7;",
+                            "Negative" => "background:#fff4ea; color:#9a5b25;",
+                            _ => "background:#f1f5f9; color:#64748b;"
+                        };
+                        var formattedDate = DateOnly.TryParse(item.EntryDate, out var parsedDate)
+                            ? parsedDate.ToString("MMMM dd, yyyy")
+                            : item.EntryDate;
+
+                        <div class="col-md-6">
+                            <div class="p-3 rounded-4 border h-100 d-flex flex-column" style="background:#fcfdff;">
+                                <div class="d-flex justify-content-between align-items-center gap-2 mb-2">
+                                    <span class="small fw-semibold text-muted">@formattedDate</span>
+                                    @if (item.HasAnalysis && !string.IsNullOrWhiteSpace(item.Sentiment))
+                                    {
+                                        <span class="status-pill" style="@sentimentStyle">@item.Sentiment</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="status-pill" style="background:#f1f5f9; color:#64748b;">Pending</span>
+                                    }
+                                </div>
+
+                                @if (item.HasAnalysis)
+                                {
+                                    <p class="small mb-2">@item.AIInsight</p>
+                                    <div class="d-flex flex-wrap gap-1 mb-3">
+                                        @if (item.EmotionIndicators.Count > 0)
+                                        {
+                                            @foreach (var emo in item.EmotionIndicators)
+                                            {
+                                                <span class="badge rounded-pill fw-medium" style="background:#eef4fe; color:var(--blue-dark);">@emo</span>
+                                            }
+                                        }
+                                        else
+                                        {
+                                            <span class="small text-muted">No specific emotional indicators identified</span>
+                                        }
+                                    </div>
+                                }
+                                else
+                                {
+                                    <p class="small text-muted mb-3">AI interpretation is not available for this entry yet.</p>
+                                }
+
+                                <div class="d-flex flex-wrap gap-2 mt-auto pt-2 border-top">
+                                    <a asp-action="JournalDetails" asp-route-id="@item.JournalEntryId" asp-route-childId="@Model.Id" class="btn btn-outline-secondary btn-sm">
+                                        View journal entry
+                                    </a>
+                                    @if (!item.HasAnalysis)
+                                    {
+                                        <form asp-action="RetryJournalAnalysis" method="post" class="d-inline">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="journalEntryId" value="@item.JournalEntryId" />
+                                            <input type="hidden" name="childId" value="@Model.Id" />
+                                            <button type="submit" class="btn btn-ghost btn-sm">
+                                                <i class="bi bi-arrow-clockwise me-1"></i> Retry analysis
+                                            </button>
+                                        </form>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+
+        <div class="dashboard-card mt-4">
+            <span class="card-kicker">Relaxation corner</span>
+            <h3 class="mb-2">Recent relaxation activities</h3>
+            @if (recentRelaxation.Count == 0)
+            {
+                <p class="text-muted small mb-0">No relaxation activities recorded yet. Activities are optional for children.</p>
+            }
+            else
+            {
+                <div class="table-responsive">
+                    <table class="table table-sm align-middle mb-0">
+                        <thead>
+                            <tr>
+                                <th>Activity</th>
+                                <th>Completed</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var session in recentRelaxation)
+                            {
+                                <tr>
+                                    <td>@session.ExerciseType</td>
+                                    <td class="text-muted">@session.CompletedAt.ToLocalTime().ToString("MMM dd, yyyy h:mm tt")</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
         </div>
 
         <div class="dashboard-card mt-4">

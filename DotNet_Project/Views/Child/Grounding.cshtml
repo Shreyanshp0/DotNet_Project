@@ -1,0 +1,57 @@
+@{
+    ViewData["Title"] = "5-4-3-2-1 Grounding";
+}
+@section Styles {
+    <link rel="stylesheet" href="~/css/relaxation.css" asp-append-version="true" />
+}
+<div class="relax-page" id="groundingApp">
+    <div class="container relax-container">
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+            <a asp-action="Relaxation" class="back-link"><i class="bi bi-arrow-left"></i> Back to Relaxation Corner</a>
+            <span class="small text-muted" id="groundingProgress">Step 1 of 5</span>
+        </div>
+
+        <div class="relax-shell mt-3">
+            <span class="eyebrow">5-4-3-2-1 Grounding</span>
+            <h1 class="h2 mb-3">Notice what is around you</h1>
+
+            <div class="progress mb-4" style="height: 8px;">
+                <div class="progress-bar bg-mint" id="groundingProgressBar" role="progressbar" style="width: 20%"></div>
+            </div>
+
+            <div id="groundingStepContainer">
+                <div class="grounding-step-card">
+                    <div class="grounding-number" id="groundingNumber">5</div>
+                    <h2 class="h4 mb-2" id="groundingSense">Notice 5 things you can see</h2>
+                    <p class="text-muted mx-auto mb-4" style="max-width: 520px;" id="groundingInstruction">Look around gently and notice five things you can see.</p>
+
+                    <div class="mx-auto text-start" style="max-width: 480px;">
+                        <label for="groundingOptionalNotes" class="form-label small text-muted">Optional jot-down (not saved anywhere)</label>
+                        <textarea id="groundingOptionalNotes" class="form-control" rows="2" placeholder="You can just think of them in your head, or type here if you like..."></textarea>
+                    </div>
+                </div>
+
+                <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mt-4">
+                    <button type="button" class="btn btn-outline-secondary" id="groundingPrevBtn" disabled>Previous</button>
+                    <div class="d-flex gap-2">
+                        <button type="button" class="btn btn-ghost" id="groundingSkipBtn">Skip this step</button>
+                        <button type="button" class="btn btn-primary" id="groundingNextBtn">Next</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="text-center py-4 d-none" id="groundingCompleteCard">
+                <div class="relax-icon mint mx-auto"><i class="bi bi-check2-circle"></i></div>
+                <h2 class="h3">Well done!</h2>
+                <p class="text-muted mx-auto" style="max-width: 460px;">You took a quiet moment to check in with your senses. Take your time before moving on with your day.</p>
+                <div class="d-flex justify-content-center gap-2 mt-3">
+                    <button type="button" class="btn btn-outline-secondary" id="groundingRestartBtn">Do it again</button>
+                    <a asp-action="Relaxation" class="btn btn-primary">Back to Relaxation Corner</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+@section Scripts {
+    <script src="~/js/relaxation.js" asp-append-version="true"></script>
+}

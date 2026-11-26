@@ -59,7 +59,7 @@
                                     <td>@item.AssessmentDate.ToString("MMMM dd, yyyy")</td>
                                     <td><span class="status-pill status-complete">Report ready</span></td>
                                     <td class="text-end">
-                                        <a class="btn btn-sm btn-outline-primary" asp-action="Report" asp-route-id="@item.Id">View report</a>
+                                        <a class="btn btn-sm btn-outline-primary" asp-action="Report" asp-route-id="@item.Id" asp-route-childId="@childId">View report</a>
                                     </td>
                                 </tr>
                             }
@@ -67,11 +67,8 @@
                         else
                         {
                             <tr>
-                                <td><strong>MC-1042</strong></td>
-                                <td>October 07, 2026</td>
-                                <td><span class="status-pill status-complete">Sample report</span></td>
-                                <td class="text-end">
-                                    <a class="btn btn-sm btn-outline-primary" asp-action="Report" asp-route-id="1042">View report</a>
+                                <td colspan="4" class="text-center text-muted py-4">
+                                    No assessments submitted yet for @childName.
                                 </td>
                             </tr>
                         }

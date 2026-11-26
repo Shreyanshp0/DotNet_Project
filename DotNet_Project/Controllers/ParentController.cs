@@ -17,7 +17,8 @@ public class ParentController(
     ApplicationDbContext db,
     UserManager<ApplicationUser> userManager,
     IAIReportService reportService,
-    IParentActivityService parentService) : Controller
+    IParentActivityService parentService,
+    IJournalSentimentService sentimentService) : Controller
 {
     private const string CredentialsTempDataKey = "ChildCredentials";
 
@@ -167,7 +168,49 @@ public class ParentController(
             return exists ? Forbid() : NotFound();
         }
 
+        ViewBag.JournalInsights = await sentimentService.GetInsightsForChildAsync(parentId, childProfile.Id);
+        ViewBag.RecentRelaxation = await db.ExerciseSessions
+            .Where(s => s.ChildProfileId == childProfile.Id && s.WasCompleted)
+            .OrderByDescending(s => s.CompletedAt)
+            .Take(5)
+            .ToListAsync();
+        ViewBag.LatestAssessment = await db.Assessments
+            .Where(a => a.ChildProfileId == childProfile.Id)
+            .OrderByDescending(a => a.AssessmentDate)
+            .ThenByDescending(a => a.CreatedAt)
+            .FirstOrDefaultAsync();
         return View(childProfile);
+    }
+
+    [HttpPost, ValidateAntiForgeryToken]
+    public async Task<IActionResult> RetryJournalAnalysis(int journalEntryId, int childId)
+    {
+        var parentId = userManager.GetUserId(User)!;
+        var childProfile = await parentService.GetOwnedChildProfileAsync(parentId, childId);
+        if (childProfile is null)
+        {
+            var exists = await db.ChildProfiles.AnyAsync(c => c.Id == childId);
+            return exists ? Forbid() : NotFound();
+        }
+
+        var ownsEntry = await db.JournalEntries
+            .AnyAsync(j => j.Id == journalEntryId && j.ChildProfileId == childId);
+        if (!ownsEntry)
+        {
+            return NotFound();
+        }
+
+        var analysis = await sentimentService.AnalyzeAndSaveAsync(journalEntryId);
+        if (analysis is null)
+        {
+            TempData["ErrorMessage"] = "Journal analysis is currently unavailable. Please try again later.";
+        }
+        else
+        {
+            TempData["SuccessMessage"] = "Journal insight updated.";
+        }
+
+        return RedirectToAction(nameof(ChildDetails), new { id = childId });
     }
 
     [HttpPost, ValidateAntiForgeryToken]
@@ -255,26 +298,64 @@ public class ParentController(
         return new string(chars);
     }
 
-    public async Task<IActionResult> Report(int? id)
+    public async Task<IActionResult> Report(int? id, int? childId)
     {
         var parentId = userManager.GetUserId(User)!;
-        var query = db.Assessments
-            .Include(a => a.ChildProfile)
-            .Include(a => a.AIReport)
-            .Where(a => a.ChildProfile.ParentUserId == parentId);
+        var children = await parentService.GetChildrenForParentAsync(parentId);
+        ViewBag.Children = children;
 
-        Assessment? assessment;
+        Assessment? assessment = null;
+        ChildProfile? activeChild = null;
+
         if (id.HasValue && id.Value > 0)
         {
-            assessment = await query.FirstOrDefaultAsync(a => a.Id == id.Value);
+            assessment = await db.Assessments
+                .Include(a => a.ChildProfile)
+                .Include(a => a.AIReport)
+                .FirstOrDefaultAsync(a => a.Id == id.Value);
+
+            if (assessment is null)
+            {
+                return NotFound();
+            }
+
+            if (assessment.ChildProfile.ParentUserId != parentId)
+            {
+                return Forbid();
+            }
+
+            if (childId.HasValue && assessment.ChildProfileId != childId.Value)
+            {
+                return NotFound();
+            }
+
+            activeChild = assessment.ChildProfile;
         }
         else
         {
-            assessment = await query
-                .OrderByDescending(a => a.AssessmentDate)
-                .ThenByDescending(a => a.CreatedAt)
-                .FirstOrDefaultAsync();
+            activeChild = childId.HasValue
+                ? children.FirstOrDefault(c => c.Id == childId.Value)
+                : children.FirstOrDefault();
+
+            if (childId.HasValue && activeChild is null)
+            {
+                var exists = await db.ChildProfiles.AnyAsync(c => c.Id == childId.Value);
+                return exists ? Forbid() : NotFound();
+            }
+
+            if (activeChild is not null)
+            {
+                assessment = await db.Assessments
+                    .Include(a => a.ChildProfile)
+                    .Include(a => a.AIReport)
+                    .Where(a => a.ChildProfileId == activeChild.Id && a.ChildProfile.ParentUserId == parentId)
+                    .OrderByDescending(a => a.AssessmentDate)
+                    .ThenByDescending(a => a.CreatedAt)
+                    .FirstOrDefaultAsync();
+            }
         }
+
+        ViewBag.ActiveChild = activeChild;
 
         if (assessment is null)
         {
@@ -308,6 +389,12 @@ public class ParentController(
             ? children.FirstOrDefault(c => c.Id == childId.Value)
             : children.FirstOrDefault();
 
+        if (childId.HasValue && activeChild is null)
+        {
+            var exists = await db.ChildProfiles.AnyAsync(c => c.Id == childId.Value);
+            return exists ? Forbid() : NotFound();
+        }
+
         if (activeChild is null)
         {
             return View();
@@ -335,6 +422,12 @@ public class ParentController(
             ? children.FirstOrDefault(c => c.Id == childId.Value)
             : children.FirstOrDefault();
 
+        if (childId.HasValue && activeChild is null)
+        {
+            var exists = await db.ChildProfiles.AnyAsync(c => c.Id == childId.Value);
+            return exists ? Forbid() : NotFound();
+        }
+
         ViewBag.ActiveChild = activeChild;
 
         if (activeChild is not null)
@@ -342,11 +435,13 @@ public class ParentController(
             ViewBag.Assessments = await db.Assessments
                 .Where(a => a.ChildProfileId == activeChild.Id)
                 .OrderByDescending(a => a.AssessmentDate)
+                .ThenByDescending(a => a.CreatedAt)
                 .ToListAsync();
 
             ViewBag.Journals = await db.JournalEntries
                 .Where(j => j.ChildProfileId == activeChild.Id)
                 .OrderByDescending(j => j.EntryDate)
+                .ThenByDescending(j => j.CreatedAt)
                 .ToListAsync();
         }
 
@@ -363,6 +458,12 @@ public class ParentController(
             ? children.FirstOrDefault(c => c.Id == childId.Value)
             : children.FirstOrDefault();
 
+        if (childId.HasValue && targetChild is null)
+        {
+            var exists = await db.ChildProfiles.AnyAsync(c => c.Id == childId.Value);
+            return exists ? Forbid() : NotFound();
+        }
+
         ViewBag.ActiveChild = targetChild;
 
         if (targetChild is null) return View();
@@ -377,6 +478,7 @@ public class ParentController(
             var latestAssessment = await db.Assessments
                 .Where(a => a.ChildProfileId == targetChild.Id)
                 .OrderByDescending(a => a.AssessmentDate)
+                .ThenByDescending(a => a.CreatedAt)
                 .FirstOrDefaultAsync();
 
             if (latestAssessment is not null)
@@ -399,7 +501,14 @@ public class ParentController(
             : children.FirstOrDefault();
 
         ViewBag.ActiveChild = targetChild;
-        if (targetChild is null) return View();
+        if (targetChild is null)
+        {
+            if (childId.HasValue && await db.ChildProfiles.AnyAsync(c => c.Id == childId.Value))
+            {
+                return Forbid();
+            }
+            return View();
+        }
 
         JournalEntry? entry = null;
         if (id.HasValue && id.Value > 0)

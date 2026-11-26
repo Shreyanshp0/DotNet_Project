@@ -274,6 +274,36 @@ namespace DotNet_Project.Data.Migrations
                     b.ToTable("ChildProfiles");
                 });
 
+            modelBuilder.Entity("DotNet_Project.Models.ExerciseSession", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("ChildProfileId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime>("CompletedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("DurationSeconds")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("ExerciseType")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("WasCompleted")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ChildProfileId", "CompletedAt");
+
+                    b.ToTable("ExerciseSessions");
+                });
+
             modelBuilder.Entity("DotNet_Project.Models.JournalEntry", b =>
                 {
                     b.Property<int>("Id")
@@ -318,6 +348,41 @@ namespace DotNet_Project.Data.Migrations
                         .IsUnique();
 
                     b.ToTable("JournalEntries");
+                });
+
+            modelBuilder.Entity("DotNet_Project.Models.JournalSentimentAnalysis", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("AIInsight")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("AnalyzedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("EmotionIndicators")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("JournalEntryId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Sentiment")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("JournalEntryId")
+                        .IsUnique();
+
+                    b.ToTable("JournalSentimentAnalyses");
                 });
 
             modelBuilder.Entity("DotNet_Project.Models.MoodEntry", b =>
@@ -538,6 +603,17 @@ namespace DotNet_Project.Data.Migrations
                     b.Navigation("ParentUser");
                 });
 
+            modelBuilder.Entity("DotNet_Project.Models.ExerciseSession", b =>
+                {
+                    b.HasOne("DotNet_Project.Models.ChildProfile", "ChildProfile")
+                        .WithMany("ExerciseSessions")
+                        .HasForeignKey("ChildProfileId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("ChildProfile");
+                });
+
             modelBuilder.Entity("DotNet_Project.Models.JournalEntry", b =>
                 {
                     b.HasOne("DotNet_Project.Models.ChildProfile", "ChildProfile")
@@ -547,6 +623,17 @@ namespace DotNet_Project.Data.Migrations
                         .IsRequired();
 
                     b.Navigation("ChildProfile");
+                });
+
+            modelBuilder.Entity("DotNet_Project.Models.JournalSentimentAnalysis", b =>
+                {
+                    b.HasOne("DotNet_Project.Models.JournalEntry", "JournalEntry")
+                        .WithOne("SentimentAnalysis")
+                        .HasForeignKey("DotNet_Project.Models.JournalSentimentAnalysis", "JournalEntryId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("JournalEntry");
                 });
 
             modelBuilder.Entity("DotNet_Project.Models.MoodEntry", b =>
@@ -631,9 +718,16 @@ namespace DotNet_Project.Data.Migrations
 
                     b.Navigation("ChatMessages");
 
+                    b.Navigation("ExerciseSessions");
+
                     b.Navigation("JournalEntries");
 
                     b.Navigation("MoodEntries");
+                });
+
+            modelBuilder.Entity("DotNet_Project.Models.JournalEntry", b =>
+                {
+                    b.Navigation("SentimentAnalysis");
                 });
 #pragma warning restore 612, 618
         }

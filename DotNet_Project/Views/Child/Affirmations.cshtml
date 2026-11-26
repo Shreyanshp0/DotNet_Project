@@ -1,0 +1,56 @@
+@{
+    ViewData["Title"] = "Positive Affirmations";
+}
+@section Styles {
+    <link rel="stylesheet" href="~/css/relaxation.css" asp-append-version="true" />
+}
+<div class="relax-page" id="affirmationsApp">
+    <div class="container relax-container">
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+            <a asp-action="Relaxation" class="back-link"><i class="bi bi-arrow-left"></i> Back to Relaxation Corner</a>
+            <span class="small text-muted" id="affirmationFavCount">0 saved</span>
+        </div>
+
+        <div class="relax-shell mt-3">
+            <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+                <div>
+                    <span class="eyebrow">Kind reminders</span>
+                    <h1 class="h2 mb-0">Positive Affirmations</h1>
+                </div>
+                <span class="small text-muted" id="affirmationCounter">1 of 8</span>
+            </div>
+
+            <div class="affirmation-card d-flex flex-column justify-content-center align-items-center" id="affirmationCard">
+                <p class="affirmation-quote" id="affirmationQuote">I am learning something new every day.</p>
+                <div class="d-flex flex-wrap justify-content-center gap-2 mt-2">
+                    <button type="button" class="btn btn-outline-secondary btn-sm" id="affirmationFavBtn" aria-pressed="false">
+                        <i class="bi bi-heart me-1"></i> Favourite
+                    </button>
+                    <button type="button" class="btn btn-ghost btn-sm" id="affirmationShuffleBtn">
+                        <i class="bi bi-shuffle me-1"></i> Shuffle
+                    </button>
+                </div>
+            </div>
+
+            <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mt-4">
+                <button type="button" class="btn btn-outline-secondary" id="affirmationPrevBtn">Previous</button>
+                <div class="d-flex gap-2">
+                    <button type="button" class="btn btn-ghost" id="affirmationSkipBtn">Skip</button>
+                    <button type="button" class="btn btn-primary" id="affirmationNextBtn">Next</button>
+                </div>
+            </div>
+
+            <div class="text-center mt-4 pt-3 border-top">
+                <button type="button" class="btn btn-outline-primary btn-sm" id="affirmationDoneBtn">
+                    <i class="bi bi-check2 me-1"></i> Mark session complete
+                </button>
+                <div class="alert alert-success mt-3 d-none" id="affirmationDoneBanner">
+                    Thank you for taking a kind moment for yourself!
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+@section Scripts {
+    <script src="~/js/relaxation.js" asp-append-version="true"></script>
+}

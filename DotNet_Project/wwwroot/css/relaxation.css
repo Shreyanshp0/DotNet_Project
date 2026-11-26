@@ -1,0 +1,212 @@
+.relax-page {
+    padding: 2.5rem 0 5rem;
+}
+
+.relax-container {
+    max-width: 960px;
+}
+
+.relax-hero {
+    margin: 1.5rem 0 2.25rem;
+    max-width: 680px;
+}
+
+.relax-hero h1 {
+    font-size: clamp(2rem, 4vw, 3rem);
+    margin-bottom: .6rem;
+}
+
+.relax-card {
+    background: #fff;
+    border: 1px solid var(--line);
+    border-radius: 22px;
+    box-shadow: var(--shadow);
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    padding: 1.85rem;
+}
+
+.relax-card-blue { background: #f4f8ff; border-color: #dbe7fd; }
+.relax-card-mint { background: #f1faf6; border-color: #d2efe4; }
+.relax-card-peach { background: #fff7ef; border-color: #fae3cc; }
+
+.relax-icon {
+    align-items: center;
+    border-radius: 16px;
+    display: inline-flex;
+    font-size: 1.55rem;
+    height: 54px;
+    justify-content: center;
+    margin-bottom: 1.15rem;
+    width: 54px;
+}
+
+.relax-icon.blue { background: #dce8fa; color: var(--blue-dark); }
+.relax-icon.mint { background: #d6f1e6; color: #2f7d65; }
+.relax-icon.peach { background: #fde6d2; color: #b4692c; }
+
+.relax-shell {
+    background: #fff;
+    border: 1px solid var(--line);
+    border-radius: 24px;
+    box-shadow: var(--shadow);
+    padding: 2.25rem;
+}
+
+.relax-safety-note {
+    align-items: flex-start;
+    background: #f4f8fc;
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    color: var(--muted);
+    display: flex;
+    font-size: .84rem;
+    gap: .65rem;
+    padding: .9rem 1.1rem;
+}
+
+.relax-safety-note i {
+    color: var(--blue-dark);
+    font-size: 1.1rem;
+}
+
+/* Breathing Exercise */
+.breathing-stage-wrap {
+    align-items: center;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    margin: 2rem 0;
+    min-height: 260px;
+}
+
+.breathing-circle {
+    align-items: center;
+    background: radial-gradient(circle, #eef5ff 0%, #dce8fa 100%);
+    border: 6px solid #b9d0fb;
+    border-radius: 50%;
+    display: flex;
+    flex-direction: column;
+    height: 200px;
+    justify-content: center;
+    text-align: center;
+    transform: scale(1);
+    transition: transform 3.8s ease-in-out, background-color .4s ease, border-color .4s ease;
+    width: 200px;
+}
+
+.breathing-circle.phase-inhale {
+    background: radial-gradient(circle, #e8f6f0 0%, #cceee0 100%);
+    border-color: var(--mint);
+    transform: scale(1.24);
+}
+
+.breathing-circle.phase-hold {
+    background: radial-gradient(circle, #f3f0fe 0%, #e1dbfb 100%);
+    border-color: var(--lavender);
+    transform: scale(1.24);
+}
+
+.breathing-circle.phase-exhale {
+    background: radial-gradient(circle, #eef5ff 0%, #dce8fa 100%);
+    border-color: var(--blue);
+    transform: scale(0.92);
+}
+
+.breathing-circle.phase-rest {
+    background: radial-gradient(circle, #f8fafc 0%, #e8effa 100%);
+    border-color: #cbd8ee;
+    transform: scale(0.92);
+}
+
+.breathing-stage-label {
+    color: var(--ink);
+    font-size: 1.25rem;
+    font-weight: 800;
+}
+
+.breathing-countdown {
+    color: var(--blue-dark);
+    font-size: 2.2rem;
+    font-weight: 800;
+    line-height: 1.1;
+}
+
+/* Grounding 5-4-3-2-1 */
+.grounding-step-card {
+    background: #f8fbff;
+    border: 1px solid #dfe9fa;
+    border-radius: 20px;
+    padding: 2rem;
+    text-align: center;
+}
+
+.grounding-number {
+    align-items: center;
+    background: var(--blue);
+    border-radius: 50%;
+    color: #fff;
+    display: inline-flex;
+    font-size: 2rem;
+    font-weight: 800;
+    height: 72px;
+    justify-content: center;
+    margin-bottom: 1rem;
+    width: 72px;
+}
+
+/* Positive Affirmations */
+.affirmation-card {
+    background: linear-gradient(145deg, #fff8f1 0%, #f4f8ff 100%);
+    border: 1px solid #e6ecf7;
+    border-radius: 22px;
+    min-height: 220px;
+    padding: 2.5rem 2rem;
+    text-align: center;
+    transition: opacity .25s ease, transform .25s ease;
+}
+
+.affirmation-card.is-transitioning {
+    opacity: 0.4;
+    transform: translateY(4px);
+}
+
+.affirmation-quote {
+    color: var(--ink);
+    font-size: clamp(1.35rem, 2.8vw, 1.95rem);
+    font-weight: 750;
+    line-height: 1.35;
+    margin: 1rem auto;
+    max-width: 580px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .breathing-circle,
+    .affirmation-card {
+        transition: none !important;
+        transform: none !important;
+    }
+
+    .breathing-circle.phase-inhale,
+    .breathing-circle.phase-hold,
+    .breathing-circle.phase-exhale,
+    .breathing-circle.phase-rest {
+        transform: none !important;
+    }
+}
+
+@media (max-width: 767.98px) {
+    .relax-page {
+        padding: 1.5rem 0 4rem;
+    }
+
+    .relax-shell {
+        padding: 1.4rem;
+    }
+
+    .breathing-circle {
+        height: 170px;
+        width: 170px;
+    }
+}

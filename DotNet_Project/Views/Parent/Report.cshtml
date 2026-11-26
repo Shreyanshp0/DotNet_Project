@@ -1,24 +1,62 @@
 @model DotNet_Project.DTOs.AIReportResponse
+@using DotNet_Project.Models
 @{
     ViewData["Title"] = "Wellbeing report";
     ViewData["PageClass"] = "report-page";
-    var childName = Model?.ChildName ?? "Alex Smith";
-    var childAge = Model?.ChildAge ?? 12;
-    var grade = Model?.GradeOrAgeGroup ?? "Grade 7";
-    var assessmentDate = Model?.AssessmentDate ?? DateTime.UtcNow.ToString("yyyy-MM-dd");
-    var assessmentId = Model?.AssessmentId ?? 1042;
-    var pattern = Model?.OverallPattern ?? "Positive";
-    var summary = Model?.Summary ?? "Alex's responses suggest a generally positive sense of self and strong social connections.";
-    var emotionalScore = Model?.CategoryScores?.EmotionalWellbeing ?? 82;
-    var academicScore = Model?.CategoryScores?.AcademicStress ?? 58;
-    var socialScore = Model?.CategoryScores?.SocialRelationships ?? 78;
-    var lifestyleScore = Model?.CategoryScores?.SleepAndLifestyle ?? 70;
-    var strengths = Model?.Strengths?.Split('\n', StringSplitOptions.RemoveEmptyEntries) ?? ["Comfortable building friendships", "Can recognize calming strategies", "Enjoys positive daily moments"];
-    var concerns = Model?.AreasOfConcern?.Split('\n', StringSplitOptions.RemoveEmptyEntries) ?? ["Talk about schoolwork pressure", "Protect a consistent sleep routine"];
-    var suggestions = Model?.Suggestions?.Split('\n', StringSplitOptions.RemoveEmptyEntries) ?? ["Ask open questions", "Make space for breaks", "Celebrate effort"];
+    var activeChild = ViewBag.ActiveChild as ChildProfile;
+    var children = ViewBag.Children as List<ChildProfile> ?? new();
+    var activeChildId = activeChild?.Id ?? 0;
 }
 @section Styles {
     <link rel="stylesheet" href="~/css/dashboard.css" asp-append-version="true" />
+}
+@if (Model is null)
+{
+    <div class="report-wrap">
+        <div class="container">
+            <div class="report-toolbar">
+                <a class="back-link" asp-action="Index"><i class="bi bi-arrow-left"></i> Parent dashboard</a>
+            </div>
+            @if (children.Count > 1)
+            {
+                <div class="mb-3 d-flex gap-2 align-items-center flex-wrap">
+                    <span class="small text-muted">Select child:</span>
+                    @foreach (var c in children)
+                    {
+                        <a asp-action="Report" asp-route-childId="@c.Id" class="btn btn-sm @(c.Id == activeChildId ? "btn-primary" : "btn-outline-secondary")">@c.ChildName</a>
+                    }
+                </div>
+            }
+            <div class="dashboard-card text-center py-5">
+                <span class="eyebrow">MindCare wellbeing report</span>
+                <h2>No assessment submitted yet</h2>
+                <p class="text-muted mx-auto" style="max-width: 480px;">
+                    @(activeChild is not null ? $"{activeChild.ChildName} has not completed a wellbeing assessment yet. Once they submit one, the AI-generated report will appear here." : "No assessment report is available yet.")
+                </p>
+                @if (activeChild is not null)
+                {
+                    <a asp-action="ChildDetails" asp-route-id="@activeChild.Id" class="btn btn-outline-secondary btn-sm mt-2">Back to @activeChild.ChildName's profile</a>
+                }
+            </div>
+        </div>
+    </div>
+    return;
+}
+@{
+    var childName = Model.ChildName;
+    var childAge = Model.ChildAge;
+    var grade = Model.GradeOrAgeGroup ?? $"Age {childAge}";
+    var assessmentDate = Model.AssessmentDate;
+    var assessmentId = Model.AssessmentId;
+    var pattern = Model.OverallPattern;
+    var summary = Model.Summary;
+    var emotionalScore = Model.CategoryScores?.EmotionalWellbeing ?? 0;
+    var academicScore = Model.CategoryScores?.AcademicStress ?? 0;
+    var socialScore = Model.CategoryScores?.SocialRelationships ?? 0;
+    var lifestyleScore = Model.CategoryScores?.SleepAndLifestyle ?? 0;
+    var strengths = Model.Strengths.Split('\n', StringSplitOptions.RemoveEmptyEntries);
+    var concerns = Model.AreasOfConcern.Split('\n', StringSplitOptions.RemoveEmptyEntries);
+    var suggestions = Model.Suggestions.Split('\n', StringSplitOptions.RemoveEmptyEntries);
 }
 <div class="report-wrap">
     <div class="container">

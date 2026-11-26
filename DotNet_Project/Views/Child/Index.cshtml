@@ -1,4 +1,5 @@
 @model DotNet_Project.DTOs.ChildDashboardDto
+@using DotNet_Project.Models
 @{
     ViewData["Title"] = "Child space";
     ViewData["PageClass"] = "dashboard-page";
@@ -8,6 +9,7 @@
     var journalDone = Model?.JournalSubmittedToday ?? false;
     var progressCount = Model?.DailyProgressCount ?? 0;
     var lastAssessment = Model?.LastAssessmentDate ?? "None yet";
+    var recentRelaxation = ViewBag.RecentRelaxation as List<ExerciseSession> ?? new();
     var initials = string.Join("", childName.Split(' ', StringSplitOptions.RemoveEmptyEntries).Select(s => s[0])).ToUpper();
     if (string.IsNullOrEmpty(initials)) initials = "C";
 }
@@ -102,6 +104,35 @@
                 <h3>Need someone to talk to?</h3>
                 <p class="text-muted mb-3">MindCare Buddy is here to listen.</p>
                 <a class="btn btn-primary" asp-action="Buddy">Talk to Buddy <i class="bi bi-arrow-right ms-2"></i></a>
+            </div>
+        </div>
+
+        <div class="dashboard-card mt-4" style="background: #f4fbf8; border-color: #d4efe4;">
+            <div class="d-flex flex-wrap justify-content-between align-items-start gap-3">
+                <div>
+                    <span class="card-kicker">Relaxation Corner</span>
+                    <h3>Take a quiet break anytime</h3>
+                    <p class="text-muted mb-3">Try a slow breathing circle, a 5-4-3-2-1 grounding guide, or kind affirmations whenever you want to pause.</p>
+                    <div class="d-flex flex-wrap gap-2">
+                        <a class="btn btn-primary btn-sm" asp-action="Relaxation">Open Relaxation Corner <i class="bi bi-arrow-right ms-1"></i></a>
+                        <a class="btn btn-outline-secondary btn-sm" asp-action="Breathing">Breathing</a>
+                        <a class="btn btn-outline-secondary btn-sm" asp-action="Grounding">5-4-3-2-1 Grounding</a>
+                        <a class="btn btn-outline-secondary btn-sm" asp-action="Affirmations">Affirmations</a>
+                    </div>
+                </div>
+                @if (recentRelaxation.Count > 0)
+                {
+                    <div class="bg-white rounded-4 border p-3" style="min-width: 220px;">
+                        <span class="small fw-bold text-muted d-block mb-2">Recently visited</span>
+                        @foreach (var item in recentRelaxation)
+                        {
+                            <div class="small d-flex justify-content-between gap-3 py-1 border-top">
+                                <span>@item.ExerciseType</span>
+                                <span class="text-muted">@item.CompletedAt.ToLocalTime().ToString("MMM dd")</span>
+                            </div>
+                        }
+                    </div>
+                }
             </div>
         </div>
 

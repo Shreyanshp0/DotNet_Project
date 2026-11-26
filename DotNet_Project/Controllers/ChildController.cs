@@ -33,6 +33,12 @@ public class ChildController(ApplicationDbContext db, UserManager<ApplicationUse
 
         var progressCount = (todayMoodCount > 0 ? 1 : 0) + (journalSubmittedToday ? 1 : 0);
 
+        ViewBag.RecentRelaxation = await db.ExerciseSessions
+            .Where(s => s.ChildProfileId == profile.Id && s.WasCompleted)
+            .OrderByDescending(s => s.CompletedAt)
+            .Take(3)
+            .ToListAsync();
+
         var model = new ChildDashboardDto
         {
             ChildProfileId = profile.Id,
@@ -74,4 +80,12 @@ public class ChildController(ApplicationDbContext db, UserManager<ApplicationUse
     }
 
     public IActionResult Buddy() => View("~/Views/Child/Buddy.cshtml");
+
+    public IActionResult Relaxation() => View("~/Views/Child/Relaxation.cshtml");
+
+    public IActionResult Breathing() => View("~/Views/Child/Breathing.cshtml");
+
+    public IActionResult Grounding() => View("~/Views/Child/Grounding.cshtml");
+
+    public IActionResult Affirmations() => View("~/Views/Child/Affirmations.cshtml");
 }

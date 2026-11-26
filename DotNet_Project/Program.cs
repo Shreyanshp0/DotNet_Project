@@ -96,6 +96,7 @@ builder.Services.AddScoped<IGeminiAiService, GeminiAiService>();
 builder.Services.AddScoped<IAIReportService, AIReportService>();
 builder.Services.AddScoped<IMoodService, MoodService>();
 builder.Services.AddScoped<IJournalService, JournalService>();
+builder.Services.AddScoped<IJournalSentimentService, JournalSentimentService>();
 builder.Services.AddScoped<IAssessmentService, AssessmentService>();
 builder.Services.AddScoped<IChatService, ChatService>();
 builder.Services.AddScoped<IParentActivityService, ParentActivityService>();

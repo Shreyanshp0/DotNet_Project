@@ -12,4 +12,5 @@ public class JournalEntry
     public string? Emotion { get; set; }
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public ChildProfile ChildProfile { get; set; } = null!;
+    public JournalSentimentAnalysis? SentimentAnalysis { get; set; }
 }
