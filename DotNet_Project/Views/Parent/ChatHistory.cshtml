@@ -121,7 +121,7 @@
                 <i class="bi bi-arrow-left"></i> Back to Parent dashboard
             </a>
             <div class="d-flex gap-2">
-                <a asp-action="DailyActivity" asp-route-childId="@childId" class="btn btn-outline-primary btn-sm">
+                <a asp-action="DailyActivity" asp-route-childId="@childId" class="btn btn-outline-secondary btn-sm">
                     <i class="bi bi-activity me-1"></i> Daily Activity
                 </a>
                 <a asp-action="Report" class="btn btn-outline-secondary btn-sm">
@@ -170,24 +170,25 @@
         }
         else
         {
+            var sessionNumber = 1;
             @foreach (var group in groupedByConv)
             {
                 var groupMessages = group.OrderBy(m => m.CreatedAt).ToList();
                 var firstMsg = groupMessages.First();
-                var lastMsg = groupMessages.Last();
+                var sessionDateLabel = firstMsg.CreatedAt.ToLocalTime().ToString("MMM dd, yyyy");
 
-                <div class="chat-session-card">
+                <div class="chat-session-card" data-conversation-id="@group.Key">
                     <div class="chat-session-header">
                         <div class="d-flex align-items-center gap-2">
                             <i class="bi bi-chat-quote-fill text-primary"></i>
-                            <strong>Session:</strong>
-                            <code class="small text-muted bg-white px-2 py-1 rounded border">@group.Key</code>
+                            <strong>Session #@sessionNumber &middot; @sessionDateLabel</strong>
                         </div>
                         <div class="small text-muted d-flex align-items-center gap-3">
-                            <span><i class="bi bi-clock me-1"></i>@firstMsg.CreatedAt.ToLocalTime().ToString("MMM dd, yyyy h:mm tt")</span>
-                            <span class="badge bg-light text-dark border">@groupMessages.Count messages</span>
+                            <span><i class="bi bi-clock me-1"></i>@firstMsg.CreatedAt.ToLocalTime().ToString("h:mm tt")</span>
+                            <span class="badge bg-light text-dark border">@groupMessages.Count @(groupMessages.Count == 1 ? "message" : "messages")</span>
                         </div>
                     </div>
+                    @{ sessionNumber++; }
                     <div class="chat-session-body">
                         @foreach (var msg in groupMessages)
                         {

@@ -68,8 +68,8 @@
                             <span>Wellbeing score</span>
                             <strong>@emotionalScore%</strong>
                         </div>
-                        <div class="qualitative-bar">
-                            <span class="qualitative-fill bg-lavender" style="width:@emotionalScore%"></span>
+                        <div class="progress">
+                            <div class="progress-bar bg-lavender" role="progressbar" style="width:@emotionalScore%" aria-valuenow="@emotionalScore" aria-valuemin="0" aria-valuemax="100"></div>
                         </div>
                     </div>
                 </div>
@@ -85,8 +85,8 @@
                             <span>Coping score</span>
                             <strong>@academicScore%</strong>
                         </div>
-                        <div class="qualitative-bar">
-                            <span class="qualitative-fill bg-peach" style="width:@academicScore%"></span>
+                        <div class="progress">
+                            <div class="progress-bar bg-peach" role="progressbar" style="width:@academicScore%" aria-valuenow="@academicScore" aria-valuemin="0" aria-valuemax="100"></div>
                         </div>
                     </div>
                 </div>
@@ -102,8 +102,8 @@
                             <span>Connection score</span>
                             <strong>@socialScore%</strong>
                         </div>
-                        <div class="qualitative-bar">
-                            <span class="qualitative-fill bg-mint" style="width:@socialScore%"></span>
+                        <div class="progress">
+                            <div class="progress-bar bg-mint" role="progressbar" style="width:@socialScore%" aria-valuenow="@socialScore" aria-valuemin="0" aria-valuemax="100"></div>
                         </div>
                     </div>
                 </div>
@@ -119,8 +119,8 @@
                             <span>Lifestyle score</span>
                             <strong>@lifestyleScore%</strong>
                         </div>
-                        <div class="qualitative-bar">
-                            <span class="qualitative-fill bg-blue" style="width:@lifestyleScore%"></span>
+                        <div class="progress">
+                            <div class="progress-bar bg-blue" role="progressbar" style="width:@lifestyleScore%" aria-valuenow="@lifestyleScore" aria-valuemin="0" aria-valuemax="100"></div>
                         </div>
                     </div>
                 </div>
@@ -134,7 +134,7 @@
                     <ul class="report-list">
                         @foreach (var s in strengths)
                         {
-                            <li><i class="bi bi-check-circle-fill"></i> @s</li>
+                            <li><i class="bi bi-check-circle-fill"></i> @s.TrimStart('-', '•', ' ')</li>
                         }
                     </ul>
                 </div>
@@ -146,7 +146,7 @@
                     <ul class="report-list">
                         @foreach (var c in concerns)
                         {
-                            <li><i class="bi bi-arrow-right-circle-fill"></i> @c</li>
+                            <li><i class="bi bi-arrow-right-circle-fill"></i> @c.TrimStart('-', '•', ' ')</li>
                         }
                     </ul>
                 </div>

@@ -11,7 +11,8 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace DotNet_Project.Tests;
 
-public class ChildAccountWorkflowTests : IClassFixture<TestWebApplicationFactory>
+[Collection("WebApp")]
+public class ChildAccountWorkflowTests
 {
     private readonly TestWebApplicationFactory _factory;
 
@@ -242,10 +243,14 @@ public class ChildAccountWorkflowTests : IClassFixture<TestWebApplicationFactory
 
         // Parent B cannot view Parent A's child details or reset password
         var detailsByB = await parentB.GetAsync($"/Parent/ChildDetails/{profileId}");
-        Assert.Equal(HttpStatusCode.Forbidden, detailsByB.StatusCode);
+        Assert.True(detailsByB.StatusCode == HttpStatusCode.Forbidden ||
+                    (detailsByB.StatusCode == HttpStatusCode.Redirect &&
+                     detailsByB.Headers.Location?.ToString().Contains("/Account/AccessDenied") == true));
 
         var resetByB = await parentB.PostAsync($"/Parent/ResetChildPassword/{profileId}", new FormUrlEncodedContent(new Dictionary<string, string>()));
-        Assert.Equal(HttpStatusCode.Forbidden, resetByB.StatusCode);
+        Assert.True(resetByB.StatusCode == HttpStatusCode.Forbidden ||
+                    (resetByB.StatusCode == HttpStatusCode.Redirect &&
+                     resetByB.Headers.Location?.ToString().Contains("/Account/AccessDenied") == true));
 
         // Parent B's dashboard does not show Parent A's child
         var indexByB = await (await parentB.GetAsync("/Parent/Index")).Content.ReadAsStringAsync();

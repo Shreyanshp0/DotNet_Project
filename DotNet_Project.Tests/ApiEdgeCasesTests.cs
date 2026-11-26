@@ -8,7 +8,8 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace DotNet_Project.Tests;
 
-public class ApiEdgeCasesTests : IClassFixture<TestWebApplicationFactory>
+[Collection("WebApp")]
+public class ApiEdgeCasesTests
 {
     private readonly TestWebApplicationFactory _factory;
 

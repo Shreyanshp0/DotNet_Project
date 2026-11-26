@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Antiforgery;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc.Testing;
@@ -6,6 +7,11 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace DotNet_Project.Tests;
+
+[CollectionDefinition("WebApp")]
+public class WebAppCollection : ICollectionFixture<TestWebApplicationFactory>
+{
+}
 
 public class TestAntiforgery : IAntiforgery
 {
@@ -35,6 +41,7 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
 
         builder.ConfigureServices(services =>
         {
+            services.AddDataProtection().UseEphemeralDataProtectionProvider();
             services.AddSingleton<IAntiforgery, TestAntiforgery>();
         });
     }
