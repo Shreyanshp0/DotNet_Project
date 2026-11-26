@@ -1,8 +1,8 @@
 using DotNet_Project.Models;
 using DotNet_Project.ViewModels;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 
 namespace DotNet_Project.Controllers;
 
@@ -64,6 +64,65 @@ public class AccountController(
             ModelState.AddModelError(string.Empty, "Invalid login attempt.");
             return View(model);
         }
+
+        if (user.MustChangePassword)
+        {
+            return RedirectToAction(nameof(ChangePassword), new { returnUrl });
+        }
+
+        if (!string.IsNullOrWhiteSpace(returnUrl) && Url.IsLocalUrl(returnUrl)) return LocalRedirect(returnUrl);
+        return RedirectToAction("Index", await userManager.IsInRoleAsync(user, "Parent") ? "Parent" : "Child");
+    }
+
+    [Authorize]
+    [HttpGet]
+    public async Task<IActionResult> ChangePassword(string? returnUrl = null)
+    {
+        var user = await userManager.GetUserAsync(User);
+        if (user is null) return RedirectToAction(nameof(Login));
+
+        ViewData["ReturnUrl"] = returnUrl;
+        ViewData["MustChangePassword"] = user.MustChangePassword;
+        return View(new ChangePasswordViewModel());
+    }
+
+    [Authorize]
+    [HttpPost, ValidateAntiForgeryToken]
+    public async Task<IActionResult> ChangePassword(ChangePasswordViewModel model, string? returnUrl = null)
+    {
+        ViewData["ReturnUrl"] = returnUrl;
+        var user = await userManager.GetUserAsync(User);
+        if (user is null) return RedirectToAction(nameof(Login));
+
+        ViewData["MustChangePassword"] = user.MustChangePassword;
+        if (!ModelState.IsValid) return View(model);
+
+        var result = await userManager.ChangePasswordAsync(user, model.CurrentPassword, model.NewPassword);
+        if (!result.Succeeded)
+        {
+            foreach (var error in result.Errors)
+            {
+                ModelState.AddModelError(string.Empty, error.Description);
+            }
+            return View(model);
+        }
+
+        if (user.MustChangePassword)
+        {
+            user.MustChangePassword = false;
+            var updateResult = await userManager.UpdateAsync(user);
+            if (!updateResult.Succeeded)
+            {
+                foreach (var error in updateResult.Errors)
+                {
+                    ModelState.AddModelError(string.Empty, error.Description);
+                }
+                return View(model);
+            }
+        }
+
+        await signInManager.RefreshSignInAsync(user);
+
         if (!string.IsNullOrWhiteSpace(returnUrl) && Url.IsLocalUrl(returnUrl)) return LocalRedirect(returnUrl);
         return RedirectToAction("Index", await userManager.IsInRoleAsync(user, "Parent") ? "Parent" : "Child");
     }

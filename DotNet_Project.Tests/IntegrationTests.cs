@@ -69,6 +69,19 @@ public class IntegrationTests : IClassFixture<TestWebApplicationFactory>
         var loginResponse = await childClient.PostAsync("/Account/Login", loginContent);
         Assert.Equal(HttpStatusCode.OK, loginResponse.StatusCode);
 
+        // 3b. First login requires password change before accessing dashboard/APIs
+        var blockedMoodRes = await childClient.PostAsJsonAsync("/api/mood/checkin", new MoodCheckInRequest { Mood = "Great", Reason = "Test" });
+        Assert.Equal(HttpStatusCode.Forbidden, blockedMoodRes.StatusCode);
+
+        var newChildPassword = "NewSecurePass2!";
+        var changePwdRes = await childClient.PostAsync("/Account/ChangePassword", new FormUrlEncodedContent(new Dictionary<string, string>
+        {
+            ["CurrentPassword"] = password,
+            ["NewPassword"] = newChildPassword,
+            ["ConfirmNewPassword"] = newChildPassword
+        }));
+        Assert.Equal(HttpStatusCode.OK, changePwdRes.StatusCode);
+
         // 4. Child: Mood Check-In (POST /api/mood/checkin)
         var moodReq = new MoodCheckInRequest { Mood = "Great", Reason = "Had fun at school" };
         var moodPostRes = await childClient.PostAsJsonAsync("/api/mood/checkin", moodReq);

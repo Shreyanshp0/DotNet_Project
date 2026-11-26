@@ -20,12 +20,14 @@ public class ParentActivityService(ApplicationDbContext db) : IParentActivitySer
     public async Task<ChildProfile?> GetOwnedChildProfileAsync(string parentUserId, int childProfileId)
     {
         return await db.ChildProfiles
+            .Include(c => c.ChildUser)
             .FirstOrDefaultAsync(c => c.Id == childProfileId && c.ParentUserId == parentUserId);
     }
 
     public async Task<List<ChildProfile>> GetChildrenForParentAsync(string parentUserId)
     {
         return await db.ChildProfiles
+            .Include(c => c.ChildUser)
             .Where(c => c.ParentUserId == parentUserId)
             .OrderBy(c => c.ChildName)
             .ToListAsync();

@@ -1,0 +1,84 @@
+@model DotNet_Project.Models.ChildProfile
+@{
+    ViewData["Title"] = $"{Model.ChildName} - Details";
+    ViewData["PageClass"] = "dashboard-page";
+    var mustChange = Model.ChildUser?.MustChangePassword ?? false;
+}
+@section Styles {
+    <link rel="stylesheet" href="~/css/dashboard.css" asp-append-version="true" />
+}
+<div class="dashboard-wrap">
+    <div class="container">
+        <a asp-action="Index" class="back-link">← Back to My Children</a>
+        <div class="dashboard-top mt-3">
+            <div>
+                <span class="eyebrow">Child profile</span>
+                <h1>@Model.ChildName</h1>
+                <p class="text-muted mb-0">Linked child account details and management.</p>
+            </div>
+            <form asp-action="ResetChildPassword" asp-route-id="@Model.Id" method="post" onsubmit="return confirm('Generate a new temporary password for @Model.ChildName? Their current password will stop working immediately.');">
+                @Html.AntiForgeryToken()
+                <button type="submit" class="btn btn-outline-warning">
+                    <i class="bi bi-key me-1"></i> Reset password
+                </button>
+            </form>
+        </div>
+
+        @if (TempData["ErrorMessage"] is string err)
+        {
+            <div class="alert alert-danger">@err</div>
+        }
+
+        <div class="dashboard-card">
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <div class="small text-muted">Child ID / Username</div>
+                    <div class="fw-semibold font-monospace">@(Model.ChildUser?.UserName ?? "—")</div>
+                </div>
+                <div class="col-md-6">
+                    <div class="small text-muted">Account Status</div>
+                    <div>
+                        @if (mustChange)
+                        {
+                            <span class="badge bg-warning text-dark">Pending Password Change</span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-success">Active</span>
+                        }
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="small text-muted">Date of Birth</div>
+                    <div class="fw-semibold">@Model.DateOfBirth.ToString("dd MMM yyyy")</div>
+                </div>
+                <div class="col-md-6">
+                    <div class="small text-muted">Account Created</div>
+                    <div class="fw-semibold">@Model.CreatedAt.ToLocalTime().ToString("dd MMM yyyy")</div>
+                </div>
+                @if (!string.IsNullOrEmpty(Model.Gender))
+                {
+                    <div class="col-md-6">
+                        <div class="small text-muted">Gender</div>
+                        <div class="fw-semibold">@Model.Gender</div>
+                    </div>
+                }
+                @if (!string.IsNullOrEmpty(Model.GradeOrAgeGroup))
+                {
+                    <div class="col-md-6">
+                        <div class="small text-muted">Grade / Age Group</div>
+                        <div class="fw-semibold">@Model.GradeOrAgeGroup</div>
+                    </div>
+                }
+            </div>
+
+            <hr class="my-4" />
+            <div class="d-flex flex-wrap gap-2">
+                <a asp-action="DailyActivity" asp-route-childId="@Model.Id" class="btn btn-primary btn-sm">Daily Activity <i class="bi bi-activity ms-1"></i></a>
+                <a asp-action="ChatHistory" asp-route-childId="@Model.Id" class="btn btn-outline-info btn-sm">Buddy Chat <i class="bi bi-chat-dots ms-1"></i></a>
+                <a asp-action="History" asp-route-childId="@Model.Id" class="btn btn-outline-primary btn-sm">History</a>
+                <a asp-action="Report" class="btn btn-outline-secondary btn-sm">Latest AI Report</a>
+            </div>
+        </div>
+    </div>
+</div>

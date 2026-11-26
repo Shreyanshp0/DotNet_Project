@@ -1,4 +1,5 @@
 using DotNet_Project.Data;
+using DotNet_Project.Filters;
 using DotNet_Project.Models;
 using DotNet_Project.Services;
 using Microsoft.AspNetCore.Identity;
@@ -83,7 +84,11 @@ builder.Services.AddAntiforgery(options =>
 });
 
 builder.Services.AddAuthorization();
-builder.Services.AddControllersWithViews();
+builder.Services.AddScoped<MustChangePasswordFilter>();
+builder.Services.AddControllersWithViews(options =>
+{
+    options.Filters.AddService<MustChangePasswordFilter>();
+});
 builder.Services.AddHttpClient();
 
 // Register application domain services
@@ -118,7 +123,7 @@ try
 
     if (db.Database.IsSqlite())
     {
-        await db.Database.EnsureCreatedAsync();
+        await db.Database.MigrateAsync();
     }
     else
     {

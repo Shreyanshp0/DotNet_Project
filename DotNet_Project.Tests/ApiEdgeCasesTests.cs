@@ -208,6 +208,13 @@ public class ApiEdgeCasesTests : IClassFixture<TestWebApplicationFactory>
             ["Password"] = password
         }));
 
+        await childClient.PostAsync("/Account/ChangePassword", new FormUrlEncodedContent(new Dictionary<string, string>
+        {
+            ["CurrentPassword"] = password,
+            ["NewPassword"] = "NewSecurePass2!",
+            ["ConfirmNewPassword"] = "NewSecurePass2!"
+        }));
+
         return (parentClient, childClient, childId);
     }
 }

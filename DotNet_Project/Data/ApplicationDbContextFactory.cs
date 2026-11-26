@@ -1,4 +1,3 @@
-using DotNet_Project.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
 
@@ -21,10 +20,13 @@ public class ApplicationDbContextFactory : IDesignTimeDbContextFactory<Applicati
             .AddUserSecrets<ApplicationDbContextFactory>(optional: true)
             .AddEnvironmentVariables()
             .Build();
-        var connectionString = configuration.GetConnectionString("DefaultConnection")
-            ?? "Server=localhost;Port=3306;Database=mindcare_db;";
+        var connectionString = configuration.GetConnectionString("DefaultConnection");
+        if (string.IsNullOrWhiteSpace(connectionString) || !connectionString.StartsWith("Data Source=", StringComparison.OrdinalIgnoreCase))
+        {
+            connectionString = "Data Source=mindcare.db";
+        }
         var options = new DbContextOptionsBuilder<ApplicationDbContext>()
-            .UseMySql(connectionString, new MySqlServerVersion(new Version(8, 4, 0)))
+            .UseSqlite(connectionString)
             .Options;
         return new ApplicationDbContext(options);
     }
