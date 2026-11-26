@@ -1,0 +1,156 @@
+@model List<DotNet_Project.Models.SupportRequest>
+@using DotNet_Project.Models
+@{
+    var activeChild = ViewBag.ActiveChild as ChildProfile;
+    var childName = activeChild?.ChildName ?? "Child";
+    var childId = activeChild?.Id ?? 0;
+    var resolvedCount = ViewBag.ResolvedSupportCount as int? ?? 0;
+    ViewData["Title"] = $"{childName} - Support Requests";
+    ViewData["PageClass"] = "dashboard-page";
+}
+@section Styles {
+    <link rel="stylesheet" href="~/css/dashboard.css" asp-append-version="true" />
+}
+<div class="dashboard-wrap">
+    <div class="container">
+        <a asp-action="Index" class="back-link"><i class="bi bi-arrow-left"></i> Back to My Children</a>
+        <div class="dashboard-top mt-3">
+            <div>
+                <span class="eyebrow">Child support</span>
+                <h1>@childName's Support Requests (<span id="unresolvedSupportCount">@Model.Count</span>)</h1>
+                <p class="text-muted mb-0">Unresolved requests remain here until you explicitly mark them as resolved.</p>
+            </div>
+            <a asp-action="SupportHistory" asp-route-childId="@childId" class="btn btn-outline-secondary btn-sm">
+                View resolved history (@resolvedCount) <i class="bi bi-arrow-right ms-1"></i>
+            </a>
+        </div>
+
+        @if (TempData["SupportFeedback"] is string fb)
+        {
+            <div class="alert alert-success" id="supportActionFeedback">@fb</div>
+        }
+        else
+        {
+            <div class="alert alert-success d-none" id="supportActionFeedback"></div>
+        }
+
+        <div id="supportRequestsList" class="d-flex flex-column gap-3">
+            @if (Model.Count == 0)
+            {
+                <div class="dashboard-card text-center py-5" id="supportEmptyState">
+                    <i class="bi bi-check2-circle fs-2 text-success d-block mb-2"></i>
+                    <h2 class="h4">You're all caught up.</h2>
+                    <p class="text-muted mb-0">No unresolved support requests for @childName right now.</p>
+                </div>
+            }
+            else
+            {
+                @foreach (var req in Model)
+                {
+                    var isPending = req.Status == SupportRequestStatus.Pending;
+                    var cardBg = isPending ? "background:#f5f8ff; border-color:#c9d8fb; border-left:4px solid var(--blue);" : "background:#ffffff; border-color:var(--line); border-left:4px solid #cbd5e1;";
+                    var pillStyle = isPending ? "background:#eef4fe; color:var(--blue-dark);" : "background:#f1f5f9; color:#475569;";
+
+                    <article class="dashboard-card support-request-item" data-request-id="@req.Id" style="@cardBg">
+                        <div class="d-flex flex-wrap justify-content-between align-items-start gap-2">
+                            <div>
+                                <strong class="fs-5">@req.Reason</strong>
+                                <div class="text-muted small">@req.CreatedAt.ToLocalTime().ToString("MMMM dd, yyyy · h:mm tt")</div>
+                            </div>
+                            <span class="status-pill support-status-pill" style="@pillStyle">
+                                @(isPending ? "New · Pending" : "Acknowledged")
+                            </span>
+                        </div>
+
+                        @if (!string.IsNullOrWhiteSpace(req.Message))
+                        {
+                            <p class="mt-3 mb-0 text-muted">“@req.Message”</p>
+                        }
+
+                        <div class="d-flex flex-wrap gap-2 mt-3 pt-3 border-top">
+                            @if (isPending)
+                            {
+                                <form asp-action="AcknowledgeSupportRequest" asp-route-id="@req.Id" method="post" class="d-inline support-action-form" data-action-type="acknowledge">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="childId" value="@childId" />
+                                    <button type="submit" class="btn btn-primary btn-sm">Acknowledge</button>
+                                </form>
+                            }
+                            <form asp-action="ResolveSupportRequest" asp-route-id="@req.Id" method="post" class="d-inline support-action-form" data-action-type="resolve">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="childId" value="@childId" />
+                                <button type="submit" class="btn btn-outline-secondary btn-sm">Resolve</button>
+                            </form>
+                        </div>
+                    </article>
+                }
+            }
+        </div>
+    </div>
+</div>
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const list = document.getElementById('supportRequestsList');
+            const countEl = document.getElementById('unresolvedSupportCount');
+            const feedbackEl = document.getElementById('supportActionFeedback');
+            if (!list) return;
+
+            list.addEventListener('submit', async (event) => {
+                const form = event.target.closest('.support-action-form');
+                if (!form) return;
+                event.preventDefault();
+
+                const item = form.closest('.support-request-item');
+                const actionType = form.dataset.actionType;
+                const token = form.querySelector('input[name="__RequestVerificationToken"]')?.value || '';
+
+                try {
+                    const res = await fetch(form.action, {
+                        method: 'POST',
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest',
+                            'RequestVerificationToken': token,
+                            'X-CSRF-TOKEN': token
+                        },
+                        body: new FormData(form)
+                    });
+
+                    if (!res.ok) {
+                        form.submit();
+                        return;
+                    }
+
+                    const data = await res.json();
+                    if (!data.success) return;
+
+                    if (countEl) countEl.textContent = String(data.unresolvedCount);
+                    if (feedbackEl) {
+                        feedbackEl.textContent = data.message || 'Updated.';
+                        feedbackEl.classList.remove('d-none');
+                    }
+
+                    if (actionType === 'acknowledge' && item) {
+                        item.style.background = '#ffffff';
+                        item.style.borderColor = 'var(--line)';
+                        item.style.borderLeft = '4px solid #cbd5e1';
+                        const pill = item.querySelector('.support-status-pill');
+                        if (pill) {
+                            pill.textContent = 'Acknowledged';
+                            pill.style.background = '#f1f5f9';
+                            pill.style.color = '#475569';
+                        }
+                        form.remove();
+                    } else if (actionType === 'resolve' && item) {
+                        item.remove();
+                        if (data.unresolvedCount === 0) {
+                            list.innerHTML = `<div class="dashboard-card text-center py-5" id="supportEmptyState"><i class="bi bi-check2-circle fs-2 text-success d-block mb-2"></i><h2 class="h4">You're all caught up.</h2><p class="text-muted mb-0">No unresolved support requests for @childName right now.</p></div>`;
+                        }
+                    }
+                } catch {
+                    form.submit();
+                }
+            });
+        });
+    </script>
+}

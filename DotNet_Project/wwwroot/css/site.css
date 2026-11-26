@@ -990,3 +990,35 @@ h2 {
     right: 1rem;
   }
 }
+
+/* Child-specific Support Requests button highlight & restrained glow */
+.btn-support-alert {
+  animation: supportGlowPulse 3.2s ease-in-out infinite;
+  background: #fff8eb;
+  border: 1px solid #f59e0b;
+  box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.22);
+  color: #92400e;
+}
+
+.btn-support-alert:hover,
+.btn-support-alert:focus {
+  background: #fef3c7;
+  border-color: #d97706;
+  color: #78350f;
+}
+
+@keyframes supportGlowPulse {
+  0%, 100% {
+    box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.18);
+  }
+  50% {
+    box-shadow: 0 0 0 5px rgba(245, 158, 11, 0.34);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .btn-support-alert {
+    animation: none !important;
+    box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.24);
+  }
+}

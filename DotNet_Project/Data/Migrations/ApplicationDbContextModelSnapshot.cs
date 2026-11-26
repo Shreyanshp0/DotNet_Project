@@ -412,6 +412,110 @@ namespace DotNet_Project.Data.Migrations
                     b.ToTable("MoodEntries");
                 });
 
+            modelBuilder.Entity("DotNet_Project.Models.SupportRequest", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime?>("AcknowledgedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("ChildProfileId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("ChildUserId")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Message")
+                        .HasMaxLength(500)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ParentResponse")
+                        .HasMaxLength(500)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ParentUserId")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Reason")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("ResolvedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ChildProfileId");
+
+                    b.HasIndex("ChildUserId", "CreatedAt");
+
+                    b.HasIndex("ParentUserId", "Status", "CreatedAt");
+
+                    b.ToTable("SupportRequests");
+                });
+
+            modelBuilder.Entity("DotNet_Project.Models.WeeklyInsight", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("AreasForSupportJson")
+                        .IsRequired()
+                        .HasMaxLength(4000)
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("ChildProfileId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("DataLimitationsJson")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("GeneratedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ObservationsJson")
+                        .IsRequired()
+                        .HasMaxLength(4000)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("RecommendationsJson")
+                        .IsRequired()
+                        .HasMaxLength(4000)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Summary")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateOnly>("WeekEndDate")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateOnly>("WeekStartDate")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ChildProfileId", "WeekStartDate")
+                        .IsUnique();
+
+                    b.ToTable("WeeklyInsights");
+                });
+
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole", b =>
                 {
                     b.Property<string>("Id")
@@ -647,6 +751,44 @@ namespace DotNet_Project.Data.Migrations
                     b.Navigation("ChildProfile");
                 });
 
+            modelBuilder.Entity("DotNet_Project.Models.SupportRequest", b =>
+                {
+                    b.HasOne("DotNet_Project.Models.ChildProfile", "ChildProfile")
+                        .WithMany()
+                        .HasForeignKey("ChildProfileId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("DotNet_Project.Models.ApplicationUser", "ChildUser")
+                        .WithMany()
+                        .HasForeignKey("ChildUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("DotNet_Project.Models.ApplicationUser", "ParentUser")
+                        .WithMany()
+                        .HasForeignKey("ParentUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("ChildProfile");
+
+                    b.Navigation("ChildUser");
+
+                    b.Navigation("ParentUser");
+                });
+
+            modelBuilder.Entity("DotNet_Project.Models.WeeklyInsight", b =>
+                {
+                    b.HasOne("DotNet_Project.Models.ChildProfile", "ChildProfile")
+                        .WithMany("WeeklyInsights")
+                        .HasForeignKey("ChildProfileId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("ChildProfile");
+                });
+
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
                 {
                     b.HasOne("Microsoft.AspNetCore.Identity.IdentityRole", null)
@@ -723,6 +865,8 @@ namespace DotNet_Project.Data.Migrations
                     b.Navigation("JournalEntries");
 
                     b.Navigation("MoodEntries");
+
+                    b.Navigation("WeeklyInsights");
                 });
 
             modelBuilder.Entity("DotNet_Project.Models.JournalEntry", b =>

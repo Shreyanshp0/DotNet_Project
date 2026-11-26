@@ -14,6 +14,7 @@ public interface IGeminiAiService
     Task<AIReport> GenerateReportAsync(Assessment assessment, ChildProfile childProfile, List<AssessmentAnswer> answers);
     Task<string> GenerateBuddyReplyAsync(ChildProfile childProfile, string userMessage, List<ChatMessage> conversationHistory);
     Task<JournalSentimentResult?> AnalyzeJournalSentimentAsync(string journalText, CancellationToken cancellationToken = default);
+    Task<WeeklyInsightAiResult?> GenerateWeeklyInsightAsync(WeeklyAggregationResult aggregation, CancellationToken cancellationToken = default);
 }
 
 public class GeminiAiService(
@@ -160,10 +161,10 @@ public class GeminiAiService(
 
     public async Task<string> GenerateBuddyReplyAsync(ChildProfile childProfile, string userMessage, List<ChatMessage> conversationHistory)
     {
-        var lower = userMessage.ToLowerInvariant();
-        if (lower.Contains("hurt") || lower.Contains("die") || lower.Contains("suicide") || lower.Contains("kill") || lower.Contains("danger"))
+        var tier = BuddySafetyEvaluator.Classify(userMessage);
+        if (tier == BuddySafetyTier.ImmediateDanger)
         {
-            return "You are never alone, and your safety is the most important thing. Please speak right now with a parent, guardian, school counselor, or trusted adult who can support you. You can also call or text 988 anytime for free, confidential help.";
+            return BuddySafetyEvaluator.ImmediateDangerResponse;
         }
 
         var apiKey = GetApiKey();
@@ -179,17 +180,22 @@ public class GeminiAiService(
                 historyText.AppendLine($"{speaker}: {msg.Message}");
             }
 
-            var prompt = $$"""
-            You are MindCare Buddy, a warm, caring, gentle, and empathetic AI friend and companion for children and teenagers.
-            You are currently chatting live with {{childProfile.ChildName}} (Age: {{age}}, Grade: {{grade}}).
+            var tierGuidance = tier == BuddySafetyTier.ConcerningNonImmediate
+                ? "The child shared something concerning. Be warm, non-dismissive, and clearly encourage speaking with a parent, guardian, teacher, or trusted adult."
+                : "Validate feelings gently, suggest simple age-appropriate coping strategies (such as a slow breath or taking a break), and encourage talking to a trusted adult when helpful.";
 
-            Conversation Guidelines:
-            - Speak in a friendly, conversational, and uplifting tone appropriate for age {{age}}.
-            - Validate feelings genuinely.
-            - Keep replies relatively brief (2 to 4 sentences) so it feels like natural chatting.
-            - Help break big worries into simple small steps, or suggest a calming breath.
-            - Celebrate positive moments and efforts.
-            - SAFETY: If any danger or severe distress is mentioned, guide them with care to speak with a parent or trusted adult.
+            var prompt = $$"""
+            You are MindCare Buddy, a warm, caring, gentle, and empathetic AI companion for children and teenagers.
+            You are currently chatting with {{childProfile.ChildName}} (Age: {{age}}, Grade: {{grade}}).
+
+            Strict Safety Rules:
+            - Never diagnose a mental health condition.
+            - Never prescribe medication or medical treatment.
+            - Never claim to replace a therapist, parent, or trusted adult.
+            - Never guarantee confidentiality or promise secret-keeping.
+            - Never promise emergency monitoring or claim a support request was sent.
+            - Keep replies concise (2 to 4 sentences), warm, and age-appropriate.
+            - {{tierGuidance}}
 
             Recent conversation:
             {{historyText}}
@@ -202,16 +208,21 @@ public class GeminiAiService(
                 var response = await CallGeminiTextAsync(apiKey, prompt);
                 if (!string.IsNullOrWhiteSpace(response))
                 {
-                    return response.Trim();
+                    return BuddySafetyEvaluator.EnsureSafeReply(tier, response);
                 }
             }
             catch (Exception ex)
             {
-                logger.LogWarning(ex, "Live Google Gemini Buddy chat reply encountered an issue. Falling back to domain response.");
+                logger.LogWarning(ex, "Live Google Gemini Buddy chat reply encountered an issue. Falling back to safe responder.");
             }
         }
 
-        return GenerateFallbackBuddyResponse(userMessage);
+        if (tier == BuddySafetyTier.ConcerningNonImmediate)
+        {
+            return BuddySafetyEvaluator.ConcerningFallbackResponse;
+        }
+
+        return BuddySafetyEvaluator.EnsureSafeReply(tier, GenerateFallbackBuddyResponse(userMessage));
     }
 
     public async Task<JournalSentimentResult?> AnalyzeJournalSentimentAsync(string journalText, CancellationToken cancellationToken = default)
@@ -321,6 +332,117 @@ public class GeminiAiService(
         catch (Exception ex) when (ex is HttpRequestException || ex is JsonException)
         {
             logger.LogWarning(ex, "Gemini journal sentiment request failed due to network or JSON error.");
+            return null;
+        }
+    }
+
+    public async Task<WeeklyInsightAiResult?> GenerateWeeklyInsightAsync(WeeklyAggregationResult aggregation, CancellationToken cancellationToken = default)
+    {
+        var apiKey = GetApiKey();
+        if (string.IsNullOrWhiteSpace(apiKey) || apiKey.StartsWith("YOUR_"))
+        {
+            logger.LogInformation("Gemini API key is not configured. Skipping live weekly insight generation.");
+            return null;
+        }
+
+        var summaryPayload = JsonSerializer.Serialize(new
+        {
+            weekStart = aggregation.WeekStartDate.ToString("yyyy-MM-dd"),
+            weekEnd = aggregation.WeekEndDate.ToString("yyyy-MM-dd"),
+            isPartialWeek = aggregation.IsPartialWeek,
+            totalMoodCheckIns = aggregation.TotalMoodCheckIns,
+            moodCounts = aggregation.MoodCounts,
+            totalJournalEntries = aggregation.TotalJournalEntries,
+            journalSentimentCounts = aggregation.JournalSentimentCounts,
+            emotionIndicatorCounts = aggregation.EmotionIndicatorCounts,
+            totalRelaxationSessions = aggregation.TotalRelaxationSessions,
+            relaxationCounts = aggregation.RelaxationCounts
+        });
+
+        var prompt = $$"""
+        You are assisting a parent-facing wellbeing summary tool.
+        Generate a neutral, supportive weekly summary using ONLY the aggregated counts below.
+
+        Strict rules:
+        - Avoid clinical or psychological diagnoses.
+        - Avoid numerical wellbeing scores.
+        - Avoid unsupported conclusions or claiming causation.
+        - Do NOT interpret missing check-ins or missing journal entries negatively.
+        - Do NOT treat relaxation exercise completion as proof of improved wellbeing.
+        - Distinguish observations from gentle suggestions.
+        - Acknowledge data limitations clearly (including partial weeks or small sample sizes).
+        - Optional recommendations may ONLY reference: "Box Breathing", "Comfortable Breathing (No Holds)", "5-4-3-2-1 Grounding", or "Positive Affirmations". Do not claim an exercise treats any condition.
+
+        Respond ONLY with a valid JSON object matching:
+        {
+          "summary": "...",
+          "observations": ["..."],
+          "areasForSupport": ["..."],
+          "recommendations": [{ "activity": "Box Breathing", "reason": "An optional short activity for taking a break." }],
+          "dataLimitations": ["..."]
+        }
+
+        Aggregated weekly counts (no PII, no raw journal text):
+        {{summaryPayload}}
+        """;
+
+        using var timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        timeoutCts.CancelAfter(TimeSpan.FromSeconds(10));
+
+        try
+        {
+            var model = GetModel();
+            var url = $"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={apiKey}";
+            var requestBody = new
+            {
+                contents = new[]
+                {
+                    new { role = "user", parts = new[] { new { text = prompt } } }
+                },
+                generationConfig = new
+                {
+                    temperature = 0.2,
+                    responseMimeType = "application/json"
+                }
+            };
+
+            var content = new StringContent(JsonSerializer.Serialize(requestBody), Encoding.UTF8, "application/json");
+            var response = await httpClient.PostAsync(url, content, timeoutCts.Token);
+            if (!response.IsSuccessStatusCode)
+            {
+                logger.LogWarning("Gemini weekly insight request failed with HTTP {StatusCode}.", (int)response.StatusCode);
+                return null;
+            }
+
+            var responseJson = await response.Content.ReadAsStringAsync(timeoutCts.Token);
+            using var doc = JsonDocument.Parse(responseJson);
+            string? rawText = null;
+            if (doc.RootElement.TryGetProperty("candidates", out var candidates) &&
+                candidates.GetArrayLength() > 0 &&
+                candidates[0].TryGetProperty("content", out var contentElem) &&
+                contentElem.TryGetProperty("parts", out var parts) &&
+                parts.GetArrayLength() > 0 &&
+                parts[0].TryGetProperty("text", out var textElem))
+            {
+                rawText = textElem.GetString();
+            }
+
+            if (!WeeklyInsightValidator.TryParseAndValidate(rawText, out var validated, out var err))
+            {
+                logger.LogWarning("Gemini weekly insight validation failed: {Reason}", err);
+                return null;
+            }
+
+            return validated;
+        }
+        catch (OperationCanceledException)
+        {
+            logger.LogWarning("Gemini weekly insight request timed out or was canceled.");
+            return null;
+        }
+        catch (Exception ex) when (ex is HttpRequestException || ex is JsonException)
+        {
+            logger.LogWarning(ex, "Gemini weekly insight request failed due to network or JSON error.");
             return null;
         }
     }

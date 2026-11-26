@@ -10,6 +10,7 @@
     var progressCount = Model?.DailyProgressCount ?? 0;
     var lastAssessment = Model?.LastAssessmentDate ?? "None yet";
     var recentRelaxation = ViewBag.RecentRelaxation as List<ExerciseSession> ?? new();
+    var supportRequests = ViewBag.SupportRequests as List<SupportRequest> ?? new();
     var initials = string.Join("", childName.Split(' ', StringSplitOptions.RemoveEmptyEntries).Select(s => s[0])).ToUpper();
     if (string.IsNullOrEmpty(initials)) initials = "C";
 }
@@ -133,6 +134,84 @@
                         }
                     </div>
                 }
+            </div>
+        </div>
+
+        <div class="dashboard-card mt-4" id="supportRequestSection" style="background: #f8faff; border-color: #dbe7fd;">
+            <div class="row g-4 align-items-start">
+                <div class="col-lg-7">
+                    <span class="card-kicker">Support request</span>
+                    <h3>Would you like to talk to someone?</h3>
+                    <p class="text-muted mb-3">You don't have to handle everything alone. You can let your parent or trusted adult know when you need support.</p>
+
+                    @if (TempData["SupportSuccess"] is string supOk)
+                    {
+                        <div class="alert alert-success">@supOk</div>
+                    }
+                    @if (TempData["SupportError"] is string supErr)
+                    {
+                        <div class="alert alert-danger">@supErr</div>
+                    }
+
+                    <form asp-action="CreateSupportRequest" method="post">
+                        @Html.AntiForgeryToken()
+                        <div class="mb-3">
+                            <label for="supportReason" class="form-label small fw-semibold">What would you like to share? (optional)</label>
+                            <select id="supportReason" name="reason" class="form-select">
+                                <option value="I feel upset.">I feel upset.</option>
+                                <option value="Something is worrying me.">Something is worrying me.</option>
+                                <option value="I am having a difficult day.">I am having a difficult day.</option>
+                                <option value="I need help with something.">I need help with something.</option>
+                                <option value="I would prefer not to say." selected>I would prefer not to say.</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="supportMessage" class="form-label small fw-semibold">Short note for your parent (optional)</label>
+                            <textarea id="supportMessage" name="message" class="form-control" rows="2" maxlength="500" placeholder="You can leave this blank if you just want them to check in with you."></textarea>
+                        </div>
+                        <p class="small text-muted mb-3">
+                            <i class="bi bi-info-circle me-1"></i>
+                            Submitting a request shares the selected reason and any optional message with your linked parent on their dashboard.
+                        </p>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-chat-heart me-1"></i> Send support request
+                        </button>
+                    </form>
+                </div>
+
+                <div class="col-lg-5">
+                    <div class="bg-white rounded-4 border p-3">
+                        <span class="card-kicker">Your requests</span>
+                        <h4 class="h6 mb-3">Recent status</h4>
+                        @if (supportRequests.Count == 0)
+                        {
+                            <p class="text-muted small mb-0">You haven't sent a support request yet.</p>
+                        }
+                        else
+                        {
+                            @foreach (var req in supportRequests.Take(4))
+                            {
+                                var pillStyle = req.Status switch
+                                {
+                                    SupportRequestStatus.Resolved => "background:#e8f6f0; color:#2f7d65;",
+                                    SupportRequestStatus.Acknowledged => "background:#eef4fe; color:var(--blue-dark);",
+                                    _ => "background:#fff7e6; color:#9a6700;"
+                                };
+                                <div class="py-2 border-top">
+                                    <div class="d-flex justify-content-between align-items-center gap-2">
+                                        <strong class="small">@req.Reason</strong>
+                                        <span class="status-pill" style="@pillStyle">@req.Status</span>
+                                    </div>
+                                    <small class="text-muted d-block">@req.CreatedAt.ToLocalTime().ToString("MMM dd, yyyy h:mm tt")</small>
+                                    @if (!string.IsNullOrWhiteSpace(req.ParentResponse))
+                                    {
+                                        <small class="d-block mt-1 text-dark">Parent note: @req.ParentResponse</small>
+                                    }
+                                </div>
+                            }
+                        }
+                    </div>
+                </div>
             </div>
         </div>
 

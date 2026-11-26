@@ -17,6 +17,7 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
     public DbSet<ChatMessage> ChatMessages => Set<ChatMessage>();
     public DbSet<ExerciseSession> ExerciseSessions => Set<ExerciseSession>();
     public DbSet<WeeklyInsight> WeeklyInsights => Set<WeeklyInsight>();
+    public DbSet<SupportRequest> SupportRequests => Set<SupportRequest>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -102,6 +103,17 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
             e.Property(x => x.DataLimitationsJson).HasMaxLength(2000).IsRequired();
             e.HasIndex(x => new { x.ChildProfileId, x.WeekStartDate }).IsUnique();
             e.HasOne(x => x.ChildProfile).WithMany(x => x.WeeklyInsights).HasForeignKey(x => x.ChildProfileId).OnDelete(DeleteBehavior.Restrict);
+        });
+        builder.Entity<SupportRequest>(e =>
+        {
+            e.Property(x => x.Reason).HasMaxLength(120).IsRequired();
+            e.Property(x => x.Message).HasMaxLength(500);
+            e.Property(x => x.ParentResponse).HasMaxLength(500);
+            e.HasIndex(x => new { x.ParentUserId, x.Status, x.CreatedAt });
+            e.HasIndex(x => new { x.ChildUserId, x.CreatedAt });
+            e.HasOne(x => x.ChildProfile).WithMany().HasForeignKey(x => x.ChildProfileId).OnDelete(DeleteBehavior.Restrict);
+            e.HasOne(x => x.ChildUser).WithMany().HasForeignKey(x => x.ChildUserId).OnDelete(DeleteBehavior.Restrict);
+            e.HasOne(x => x.ParentUser).WithMany().HasForeignKey(x => x.ParentUserId).OnDelete(DeleteBehavior.Restrict);
         });
     }
 }

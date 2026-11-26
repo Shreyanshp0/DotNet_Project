@@ -9,7 +9,10 @@ using Microsoft.EntityFrameworkCore;
 namespace DotNet_Project.Controllers;
 
 [Authorize(Roles = "Child")]
-public class ChildController(ApplicationDbContext db, UserManager<ApplicationUser> userManager) : Controller
+public class ChildController(
+    ApplicationDbContext db,
+    UserManager<ApplicationUser> userManager,
+    DotNet_Project.Services.ISupportRequestService? supportRequestService = null) : Controller
 {
     public async Task<IActionResult> Index()
     {
@@ -38,6 +41,11 @@ public class ChildController(ApplicationDbContext db, UserManager<ApplicationUse
             .OrderByDescending(s => s.CompletedAt)
             .Take(3)
             .ToListAsync();
+
+        if (supportRequestService is not null)
+        {
+            ViewBag.SupportRequests = await supportRequestService.GetForChildAsync(profile.ChildUserId);
+        }
 
         var model = new ChildDashboardDto
         {
@@ -88,4 +96,30 @@ public class ChildController(ApplicationDbContext db, UserManager<ApplicationUse
     public IActionResult Grounding() => View("~/Views/Child/Grounding.cshtml");
 
     public IActionResult Affirmations() => View("~/Views/Child/Affirmations.cshtml");
+
+    [HttpPost, ValidateAntiForgeryToken]
+    public async Task<IActionResult> CreateSupportRequest(string? reason, string? message)
+    {
+        var userId = userManager.GetUserId(User);
+        if (string.IsNullOrEmpty(userId) || supportRequestService is null)
+        {
+            return Forbid();
+        }
+
+        var (created, isDuplicate, error) = await supportRequestService.CreateAsync(userId, reason, message);
+        if (error is not null || created is null)
+        {
+            TempData["SupportError"] = error ?? "Unable to save your support request right now.";
+        }
+        else if (isDuplicate)
+        {
+            TempData["SupportSuccess"] = "Your support request is already saved for your parent to see on their dashboard.";
+        }
+        else
+        {
+            TempData["SupportSuccess"] = "Your support request has been saved. Your parent will see it on their dashboard when they sign in.";
+        }
+
+        return RedirectToAction(nameof(Index));
+    }
 }

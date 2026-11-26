@@ -38,6 +38,6 @@ public class ChatServiceTests
 
         Assert.NotNull(result);
         Assert.Contains("safety", result.BuddyReply.Message);
-        Assert.Contains("988", result.BuddyReply.Message);
+        Assert.Contains("112", result.BuddyReply.Message);
     }
 }

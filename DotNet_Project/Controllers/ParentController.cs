@@ -18,7 +18,9 @@ public class ParentController(
     UserManager<ApplicationUser> userManager,
     IAIReportService reportService,
     IParentActivityService parentService,
-    IJournalSentimentService sentimentService) : Controller
+    IJournalSentimentService sentimentService,
+    IWeeklyInsightService weeklyInsightService,
+    ISupportRequestService supportRequestService) : Controller
 {
     private const string CredentialsTempDataKey = "ChildCredentials";
 
@@ -26,7 +28,111 @@ public class ParentController(
     {
         var parentId = userManager.GetUserId(User)!;
         ViewBag.Children = await parentService.GetChildrenForParentAsync(parentId);
+        ViewBag.UnresolvedSupportCounts = await supportRequestService.GetUnresolvedCountsByChildAsync(parentId);
         return View();
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> SupportRequests(int childId)
+    {
+        var parentId = userManager.GetUserId(User)!;
+        var childProfile = await parentService.GetOwnedChildProfileAsync(parentId, childId);
+        if (childProfile is null)
+        {
+            var exists = await db.ChildProfiles.AnyAsync(c => c.Id == childId);
+            return exists ? Forbid() : NotFound();
+        }
+
+        ViewBag.ActiveChild = childProfile;
+        ViewBag.ResolvedSupportCount = (await supportRequestService.GetResolvedForChildAsync(parentId, childId)).Count;
+        var unresolved = await supportRequestService.GetUnresolvedForChildAsync(parentId, childId);
+        return View(unresolved);
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> SupportHistory(int? childId = null)
+    {
+        var parentId = userManager.GetUserId(User)!;
+        if (childId.HasValue)
+        {
+            var childProfile = await parentService.GetOwnedChildProfileAsync(parentId, childId.Value);
+            if (childProfile is null)
+            {
+                var exists = await db.ChildProfiles.AnyAsync(c => c.Id == childId.Value);
+                return exists ? Forbid() : NotFound();
+            }
+
+            ViewBag.ActiveChild = childProfile;
+            var childResolved = await supportRequestService.GetResolvedForChildAsync(parentId, childId.Value);
+            return View(childResolved);
+        }
+
+        var resolved = await supportRequestService.GetResolvedForParentAsync(parentId);
+        return View(resolved);
+    }
+
+    [HttpPost, ValidateAntiForgeryToken]
+    public async Task<IActionResult> AcknowledgeSupportRequest(int id, int? childId = null, string? parentResponse = null)
+    {
+        var parentId = userManager.GetUserId(User)!;
+        var outcome = await supportRequestService.AcknowledgeAsync(parentId, id, parentResponse);
+        var isAjax = string.Equals(Request.Headers["X-Requested-With"], "XMLHttpRequest", StringComparison.OrdinalIgnoreCase);
+
+        if (outcome == SupportActionOutcome.NotFound) return NotFound();
+        if (outcome == SupportActionOutcome.Forbidden) return Forbid();
+
+        if (isAjax)
+        {
+            var unresolved = childId.HasValue
+                ? await supportRequestService.GetUnresolvedForChildAsync(parentId, childId.Value)
+                : await supportRequestService.GetUnresolvedForParentAsync(parentId);
+            return Json(new
+            {
+                success = outcome == SupportActionOutcome.Success,
+                status = "Acknowledged",
+                unresolvedCount = unresolved.Count,
+                message = "Support request acknowledged."
+            });
+        }
+
+        if (outcome == SupportActionOutcome.Success)
+            TempData["SupportFeedback"] = "Support request acknowledged. It will remain open until resolved.";
+
+        return childId.HasValue
+            ? RedirectToAction(nameof(SupportRequests), new { childId = childId.Value })
+            : RedirectToAction(nameof(Index));
+    }
+
+    [HttpPost, ValidateAntiForgeryToken]
+    public async Task<IActionResult> ResolveSupportRequest(int id, int? childId = null, string? parentResponse = null)
+    {
+        var parentId = userManager.GetUserId(User)!;
+        var outcome = await supportRequestService.ResolveAsync(parentId, id, parentResponse);
+        var isAjax = string.Equals(Request.Headers["X-Requested-With"], "XMLHttpRequest", StringComparison.OrdinalIgnoreCase);
+
+        if (outcome == SupportActionOutcome.NotFound) return NotFound();
+        if (outcome == SupportActionOutcome.Forbidden) return Forbid();
+
+        if (isAjax)
+        {
+            var unresolved = childId.HasValue
+                ? await supportRequestService.GetUnresolvedForChildAsync(parentId, childId.Value)
+                : await supportRequestService.GetUnresolvedForParentAsync(parentId);
+            return Json(new
+            {
+                success = outcome == SupportActionOutcome.Success,
+                status = "Resolved",
+                unresolvedCount = unresolved.Count,
+                message = "Support request marked as resolved."
+            });
+        }
+
+        if (outcome == SupportActionOutcome.Success)
+            TempData["SupportFeedback"] = "Support request marked as resolved and moved to history.";
+
+        return childId.HasValue
+            ? RedirectToAction(nameof(SupportRequests), new { childId = childId.Value })
+            : RedirectToAction(nameof(Index));
     }
 
     [HttpGet]
@@ -211,6 +317,50 @@ public class ParentController(
         }
 
         return RedirectToAction(nameof(ChildDetails), new { id = childId });
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> WeeklyInsights(int childId, string? weekStart = null)
+    {
+        var parentId = userManager.GetUserId(User)!;
+        var childProfile = await parentService.GetOwnedChildProfileAsync(parentId, childId);
+        if (childProfile is null)
+        {
+            var exists = await db.ChildProfiles.AnyAsync(c => c.Id == childId);
+            return exists ? Forbid() : NotFound();
+        }
+
+        DateOnly? parsedWeekStart = null;
+        if (!string.IsNullOrWhiteSpace(weekStart) && DateOnly.TryParse(weekStart, out var parsed))
+        {
+            parsedWeekStart = parsed;
+        }
+
+        var vm = await weeklyInsightService.GetOrGenerateWeeklyInsightAsync(parentId, childId, parsedWeekStart);
+        if (vm is null) return NotFound();
+
+        return View(vm);
+    }
+
+    [HttpPost, ValidateAntiForgeryToken]
+    public async Task<IActionResult> GenerateWeeklyInsight(int childId, string? weekStart = null)
+    {
+        var parentId = userManager.GetUserId(User)!;
+        var childProfile = await parentService.GetOwnedChildProfileAsync(parentId, childId);
+        if (childProfile is null)
+        {
+            var exists = await db.ChildProfiles.AnyAsync(c => c.Id == childId);
+            return exists ? Forbid() : NotFound();
+        }
+
+        DateOnly? parsedWeekStart = null;
+        if (!string.IsNullOrWhiteSpace(weekStart) && DateOnly.TryParse(weekStart, out var parsed))
+        {
+            parsedWeekStart = parsed;
+        }
+
+        await weeklyInsightService.GetOrGenerateWeeklyInsightAsync(parentId, childId, parsedWeekStart, forceRegenerate: true);
+        return RedirectToAction(nameof(WeeklyInsights), new { childId, weekStart });
     }
 
     [HttpPost, ValidateAntiForgeryToken]

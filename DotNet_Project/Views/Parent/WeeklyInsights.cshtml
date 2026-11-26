@@ -1,0 +1,170 @@
+@model DotNet_Project.DTOs.WeeklyInsightViewModel
+@{
+    ViewData["Title"] = $"{Model.ChildName} - Weekly Emotional Insights";
+    ViewData["PageClass"] = "dashboard-page";
+    var weekRange = $"{Model.WeekStartDate:MMM dd, yyyy} – {Model.WeekEndDate:MMM dd, yyyy}";
+}
+@section Styles {
+    <link rel="stylesheet" href="~/css/dashboard.css" asp-append-version="true" />
+}
+<div class="dashboard-wrap">
+    <div class="container">
+        <a asp-action="ChildDetails" asp-route-id="@Model.ChildProfileId" class="back-link"><i class="bi bi-arrow-left"></i> Back to @Model.ChildName's profile</a>
+
+        <div class="dashboard-top mt-3">
+            <div>
+                <span class="eyebrow">Weekly emotional insights</span>
+                <h1>@Model.ChildName's week</h1>
+                <p class="text-muted mb-0">
+                    @weekRange (Asia/Kolkata)
+                    @if (Model.IsPartialWeek)
+                    {
+                        <span class="badge ms-2" style="background:#eef4fe; color:var(--blue-dark);">Partial week in progress</span>
+                    }
+                </p>
+            </div>
+            @if (Model.HasSufficientData)
+            {
+                <form asp-action="GenerateWeeklyInsight" method="post">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="childId" value="@Model.ChildProfileId" />
+                    <input type="hidden" name="weekStart" value="@Model.WeekStartDate.ToString("yyyy-MM-dd")" />
+                    <button type="submit" class="btn btn-outline-secondary btn-sm">
+                        <i class="bi bi-arrow-clockwise me-1"></i> Refresh summary
+                    </button>
+                </form>
+            }
+        </div>
+
+        @if (Model.PreviousWeeks.Count > 1)
+        {
+            <div class="mb-4 d-flex flex-wrap align-items-center gap-2">
+                <span class="small text-muted">Available weeks:</span>
+                @foreach (var wk in Model.PreviousWeeks)
+                {
+                    var isCurrent = wk.WeekStartDate == Model.WeekStartDate;
+                    <a asp-action="WeeklyInsights"
+                       asp-route-childId="@Model.ChildProfileId"
+                       asp-route-weekStart="@wk.WeekStartDate.ToString("yyyy-MM-dd")"
+                       class="btn btn-sm @(isCurrent ? "btn-primary" : "btn-outline-secondary")">
+                        @wk.WeekStartDate.ToString("MMM dd") – @wk.WeekEndDate.ToString("MMM dd")
+                    </a>
+                }
+            </div>
+        }
+
+        <div class="row g-3 mb-4">
+            <div class="col-md-4">
+                <div class="dashboard-card h-100">
+                    <span class="card-kicker">Data-derived counts</span>
+                    <div class="fs-3 fw-bold">@Model.TotalMoodCheckIns</div>
+                    <div class="small text-muted">Mood check-ins this week</div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="dashboard-card h-100">
+                    <span class="card-kicker">Data-derived counts</span>
+                    <div class="fs-3 fw-bold">@Model.TotalJournalEntries</div>
+                    <div class="small text-muted">Journal reflections this week</div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="dashboard-card h-100">
+                    <span class="card-kicker">Optional activities</span>
+                    <div class="fs-3 fw-bold">@Model.TotalRelaxationSessions</div>
+                    <div class="small text-muted">Relaxation Corner visits</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="dashboard-card mb-4">
+            <span class="card-kicker">AI-generated interpretation</span>
+            <h2 class="h4 mb-2">Weekly summary</h2>
+            <p class="mb-3">@Model.Summary</p>
+            <div class="disclaimer mt-0">
+                <i class="bi bi-info-circle"></i>
+                <p class="mb-0">AI-generated weekly summary based on available check-ins and journal language. It is not a clinical assessment, diagnosis, or wellbeing score.</p>
+            </div>
+        </div>
+
+        @if (Model.HasData)
+        {
+            <div class="row g-4">
+                <div class="col-lg-6">
+                    <div class="dashboard-card h-100" style="background:#f8fbff;">
+                        <span class="card-kicker">Data-derived observations</span>
+                        <h3 class="h5 mb-3">What was observed</h3>
+                        @if (Model.Observations.Count > 0)
+                        {
+                            <ul class="mb-0 ps-3">
+                                @foreach (var obs in Model.Observations)
+                                {
+                                    <li class="mb-2">@obs</li>
+                                }
+                            </ul>
+                        }
+                        else
+                        {
+                            <p class="text-muted small mb-0">No recurring observations were identified from the available entries.</p>
+                        }
+                    </div>
+                </div>
+
+                <div class="col-lg-6">
+                    <div class="dashboard-card h-100" style="background:#fff9f3;">
+                        <span class="card-kicker">Gentle support</span>
+                        <h3 class="h5 mb-3">Areas where support may help</h3>
+                        @if (Model.AreasForSupport.Count > 0)
+                        {
+                            <ul class="mb-0 ps-3">
+                                @foreach (var area in Model.AreasForSupport)
+                                {
+                                    <li class="mb-2">@area</li>
+                                }
+                            </ul>
+                        }
+                        else
+                        {
+                            <p class="text-muted small mb-0">No specific support areas highlighted from the current entries.</p>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            @if (Model.Recommendations.Count > 0)
+            {
+                <div class="dashboard-card mt-4" style="background:#f4fbf8; border-color:#d4efe4;">
+                    <span class="card-kicker">Optional recommendations</span>
+                    <h3 class="h5 mb-1">Optional Relaxation Corner activities</h3>
+                    <p class="text-muted small mb-3">These activities are completely optional and non-prescriptive. Children can choose them anytime from their Relaxation Corner.</p>
+                    <div class="row g-3">
+                        @foreach (var rec in Model.Recommendations)
+                        {
+                            <div class="col-md-4">
+                                <div class="bg-white rounded-4 border p-3 h-100 d-flex flex-column">
+                                    <strong class="mb-1">@rec.Activity</strong>
+                                    <p class="small text-muted mb-3">@rec.Reason</p>
+                                    <a href="@rec.ActivityUrl" class="btn btn-outline-secondary btn-sm mt-auto">Open activity</a>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            }
+        }
+
+        @if (Model.DataLimitations.Count > 0)
+        {
+            <div class="dashboard-card mt-4">
+                <span class="card-kicker">Context &amp; limitations</span>
+                <h3 class="h5 mb-2">Data limitations</h3>
+                <ul class="small text-muted mb-0 ps-3">
+                    @foreach (var lim in Model.DataLimitations)
+                    {
+                        <li class="mb-1">@lim</li>
+                    }
+                </ul>
+            </div>
+        }
+    </div>
+</div>

@@ -1,0 +1,70 @@
+@model List<DotNet_Project.Models.SupportRequest>
+@using DotNet_Project.Models
+@{
+    var activeChild = ViewBag.ActiveChild as ChildProfile;
+    ViewData["Title"] = activeChild is not null ? $"{activeChild.ChildName} - Resolved Support Requests" : "Resolved Support Requests";
+    ViewData["PageClass"] = "dashboard-page";
+}
+@section Styles {
+    <link rel="stylesheet" href="~/css/dashboard.css" asp-append-version="true" />
+}
+<div class="dashboard-wrap">
+    <div class="container">
+        @if (activeChild is not null)
+        {
+            <a asp-action="SupportRequests" asp-route-childId="@activeChild.Id" class="back-link"><i class="bi bi-arrow-left"></i> Back to @activeChild.ChildName's Support Requests</a>
+        }
+        else
+        {
+            <a asp-action="Index" class="back-link"><i class="bi bi-arrow-left"></i> Back to Parent Dashboard</a>
+        }
+        <div class="dashboard-top mt-3">
+            <div>
+                <span class="eyebrow">Support history</span>
+                <h1>@(activeChild is not null ? $"{activeChild.ChildName}'s Resolved Requests" : "Resolved Support Requests")</h1>
+                <p class="text-muted mb-0">Previously resolved support requests.</p>
+            </div>
+        </div>
+
+        <div class="dashboard-card">
+            @if (Model.Count == 0)
+            {
+                <p class="text-muted mb-0">No resolved support requests yet.</p>
+            }
+            else
+            {
+                <div class="table-responsive">
+                    <table class="table align-middle mb-0">
+                        <thead>
+                            <tr>
+                                <th>Child</th>
+                                <th>Reason</th>
+                                <th>Submitted</th>
+                                <th>Resolved</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var req in Model)
+                            {
+                                <tr>
+                                    <td><strong>@req.ChildProfile.ChildName</strong></td>
+                                    <td>
+                                        <div>@req.Reason</div>
+                                        @if (!string.IsNullOrWhiteSpace(req.Message))
+                                        {
+                                            <small class="text-muted">“@req.Message”</small>
+                                        }
+                                    </td>
+                                    <td class="text-muted small">@req.CreatedAt.ToLocalTime().ToString("MMM dd, yyyy h:mm tt")</td>
+                                    <td class="text-muted small">@(req.ResolvedAt?.ToLocalTime().ToString("MMM dd, yyyy h:mm tt") ?? "—")</td>
+                                    <td><span class="status-pill status-good">Resolved</span></td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+    </div>
+</div>

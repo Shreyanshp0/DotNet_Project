@@ -179,6 +179,9 @@ public class JournalSentimentTests
             if (ThrowOnAnalyze) throw new HttpRequestException("Simulated Gemini outage");
             return Task.FromResult(NextResult);
         }
+
+        public Task<WeeklyInsightAiResult?> GenerateWeeklyInsightAsync(WeeklyAggregationResult aggregation, CancellationToken cancellationToken = default) =>
+            Task.FromResult<WeeklyInsightAiResult?>(null);
     }
 }
 
@@ -319,5 +322,8 @@ public class JournalSentimentIntegrationTests
 
         public Task<JournalSentimentResult?> AnalyzeJournalSentimentAsync(string journalText, CancellationToken cancellationToken = default) =>
             Task.FromResult(Result);
+
+        public Task<WeeklyInsightAiResult?> GenerateWeeklyInsightAsync(WeeklyAggregationResult aggregation, CancellationToken cancellationToken = default) =>
+            Task.FromResult<WeeklyInsightAiResult?>(null);
     }
 }
