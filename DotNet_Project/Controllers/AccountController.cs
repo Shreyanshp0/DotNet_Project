@@ -135,5 +135,9 @@ public class AccountController(
     }
 
     [HttpGet]
-    public IActionResult AccessDenied() => Forbid();
+    public IActionResult AccessDenied()
+    {
+        Response.StatusCode = StatusCodes.Status403Forbidden;
+        return View();
+    }
 }
