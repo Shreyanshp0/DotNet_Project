@@ -13,6 +13,7 @@ public interface IGeminiAiService
     Task<List<AssessmentQuestionItem>> GenerateQuestionsAsync(ChildProfile childProfile);
     Task<AIReport> GenerateReportAsync(Assessment assessment, ChildProfile childProfile, List<AssessmentAnswer> answers);
     Task<string> GenerateBuddyReplyAsync(ChildProfile childProfile, string userMessage, List<ChatMessage> conversationHistory);
+    Task<string> GenerateParentBuddyReplyAsync(ApplicationUser parentUser, string userMessage, List<ParentChatMessage> conversationHistory);
     Task<JournalSentimentResult?> AnalyzeJournalSentimentAsync(string journalText, CancellationToken cancellationToken = default);
     Task<WeeklyInsightAiResult?> GenerateWeeklyInsightAsync(WeeklyAggregationResult aggregation, CancellationToken cancellationToken = default);
 }
@@ -223,6 +224,82 @@ public class GeminiAiService(
         }
 
         return BuddySafetyEvaluator.EnsureSafeReply(tier, GenerateFallbackBuddyResponse(userMessage));
+    }
+
+    public async Task<string> GenerateParentBuddyReplyAsync(ApplicationUser parentUser, string userMessage, List<ParentChatMessage> conversationHistory)
+    {
+        if (ParentBuddySafetyEvaluator.IsImmediateDanger(userMessage))
+        {
+            return ParentBuddySafetyEvaluator.ImmediateDangerResponse;
+        }
+
+        var apiKey = GetApiKey();
+        if (!string.IsNullOrWhiteSpace(apiKey) && !apiKey.StartsWith("YOUR_"))
+        {
+            var historyText = new StringBuilder();
+            foreach (var msg in conversationHistory.TakeLast(6))
+            {
+                var speaker = msg.Sender == "parent" ? "Parent" : "Parent Buddy";
+                historyText.AppendLine($"{speaker}: {msg.Message}");
+            }
+
+            var prompt = $$"""
+            You are MindCare Parent Buddy, a warm, calm, supportive, and practical AI parenting guide.
+            You are answering general parenting questions for {{parentUser.FullName}}.
+            You do NOT have access to private child journals, private child chats, or clinical records—do not pretend you do.
+
+            Strict Guidelines:
+            - Provide practical, respectful, non-punitive, age-appropriate parenting guidance.
+            - Encourage open listening, empathy, and healthy routines.
+            - Never blame or shame parents or children.
+            - Never diagnose a child, prescribe medication/treatment, or claim to replace a qualified professional.
+            - Never recommend physical punishment, humiliation, or coercive behaviour.
+            - Encourage consulting a qualified professional when concerns are persistent or serious.
+            - Keep responses concise (3 to 5 sentences), warm, and actionable.
+
+            Recent conversation:
+            {{historyText}}
+            Parent: {{userMessage}}
+            Parent Buddy:
+            """;
+
+            try
+            {
+                var reply = await CallGeminiTextAsync(apiKey, prompt);
+                if (!string.IsNullOrWhiteSpace(reply))
+                {
+                    return ParentBuddySafetyEvaluator.EnsureSafeReply(reply);
+                }
+            }
+            catch (Exception ex)
+            {
+                logger.LogWarning(ex, "Live Google Gemini Parent Buddy reply encountered an issue. Falling back to safe responder.");
+            }
+        }
+
+        return ParentBuddySafetyEvaluator.EnsureSafeReply(GenerateFallbackParentBuddyResponse(userMessage));
+    }
+
+    private static string GenerateFallbackParentBuddyResponse(string message)
+    {
+        var lower = message.ToLowerInvariant();
+        if (lower.Contains("academic") || lower.Contains("school") || lower.Contains("exam") || lower.Contains("homework") || lower.Contains("stress"))
+        {
+            return "Academic pressure can feel heavy for children. Try breaking study time into small, manageable blocks with short breaks, and praise effort rather than just grades. Asking 'What felt hardest today?' opens a calm, supportive conversation.";
+        }
+        if (lower.Contains("upset") || lower.Contains("angry") || lower.Contains("emotion") || lower.Contains("cry") || lower.Contains("feeling"))
+        {
+            return "When a child is upset, staying calm yourself and naming what you notice ('It looks like today felt frustrating') helps them feel heard before problem-solving. Give them a little breathing room if they need it, and let them know you're ready to listen when they're ready.";
+        }
+        if (lower.Contains("routine") || lower.Contains("sleep") || lower.Contains("habit"))
+        {
+            return "Predictable, gentle routines—especially around wind-down time and sleep—help children feel secure. Involving your child in choosing small parts of their routine builds cooperation and independence.";
+        }
+        if (lower.Contains("communicat") || lower.Contains("talk") || lower.Contains("difficult") || lower.Contains("trust") || lower.Contains("confidence"))
+        {
+            return "Building trust happens in everyday low-pressure moments—like a walk, car ride, or shared snack. Open-ended questions and listening without immediate judgment encourage children to share more freely over time.";
+        }
+        return "Supporting a child starts with calm, curious listening and patience. Focus on small everyday moments of connection, and if a concern feels persistent or overwhelming, consulting a pediatrician or child counselor can provide helpful guidance.";
     }
 
     public async Task<JournalSentimentResult?> AnalyzeJournalSentimentAsync(string journalText, CancellationToken cancellationToken = default)

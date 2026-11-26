@@ -1,0 +1,81 @@
+@{ ViewData["Title"] = "Parent Buddy"; }
+@section Styles { <link rel="stylesheet" href="~/css/buddy.css" asp-append-version="true" /> }
+<div class="buddy-page"
+     id="buddyApp"
+     data-conversations-endpoint="/api/parent-buddy/conversations"
+     data-history-endpoint="/api/parent-buddy/history"
+     data-storage-key="mindcare-parent-buddy-conversation-id"
+     data-size-key="mindcare-parent-buddy-shell-size"
+     data-user-sender="parent"
+     data-conv-prefix="pconv"
+     data-greeting="Hello! I’m Parent Buddy. I’m here to share calm, practical ideas for everyday parenting questions. What’s on your mind today?">
+    <div class="container buddy-container">
+        <div class="buddy-toolbar">
+            <a class="back-link" asp-controller="Parent" asp-action="Index"><i class="bi bi-arrow-left"></i> Back to Parent Dashboard</a>
+            <div class="d-flex flex-wrap gap-2">
+                <button type="button" class="btn btn-outline-secondary btn-sm" id="toggleExpandBuddy">
+                    <i class="bi bi-arrows-angle-expand me-1"></i> Expand view
+                </button>
+                <button type="button" class="btn btn-outline-secondary btn-sm" id="clearConversation">
+                    <i class="bi bi-plus-circle me-1"></i> New conversation
+                </button>
+            </div>
+        </div>
+        <div class="buddy-shell" id="buddyShell">
+            <aside class="buddy-intro buddy-intro-parent">
+                <div class="buddy-intro-header">
+                    <div class="buddy-avatar buddy-avatar-large" style="background:#d6f1e6; color:#2f7d65;"><i class="bi bi-people-fill"></i></div>
+                    <span class="eyebrow">Parent guidance space</span>
+                </div>
+                <h1>Parent Buddy</h1>
+                <p>Ask everyday parenting questions and explore supportive communication ideas. Parent Buddy does not access your child's private chats or journals.</p>
+
+                <div class="buddy-history-sidebar">
+                    <span class="card-kicker mb-2">Your conversations</span>
+                    <div class="buddy-conversation-list" id="buddyConversationList">
+                        <small class="text-muted">Loading conversations...</small>
+                    </div>
+                </div>
+
+                <div class="buddy-help-card">
+                    <i class="bi bi-info-circle"></i>
+                    <div>
+                        <strong>Informational support only</strong>
+                        <p>Parent Buddy is not a therapist or medical professional.</p>
+                    </div>
+                </div>
+            </aside>
+            <section class="buddy-chat" aria-label="Parent Buddy chat">
+                <header class="buddy-chat-header">
+                    <div class="buddy-avatar" style="background:#d6f1e6; color:#2f7d65;"><i class="bi bi-people-fill"></i></div>
+                    <div>
+                        <h2>Parent Buddy</h2>
+                        <span><i class="bi bi-circle-fill"></i> General Parenting Guide</span>
+                    </div>
+                </header>
+                <div class="buddy-messages" id="buddyMessages" aria-live="polite" aria-label="Conversation"></div>
+                <div class="buddy-typing d-none" id="buddyTyping"><span></span><span></span><span></span><small>Parent Buddy is thinking...</small></div>
+                <div class="buddy-prompts" id="buddyPrompts">
+                    <span class="prompt-label">Suggested topics...</span>
+                    <button type="button" class="prompt-chip">Understanding my child's emotions.</button>
+                    <button type="button" class="prompt-chip">Communicating with my child.</button>
+                    <button type="button" class="prompt-chip">Managing academic stress.</button>
+                    <button type="button" class="prompt-chip">Building confidence and independence.</button>
+                    <button type="button" class="prompt-chip">Creating healthy routines.</button>
+                    <button type="button" class="prompt-chip">Handling difficult conversations.</button>
+                </div>
+                <form class="buddy-composer" id="buddyForm" data-endpoint="/Parent/Buddy/SendMessage">
+                    <label class="visually-hidden" for="buddyInput">Message Parent Buddy</label>
+                    <textarea id="buddyInput" name="Message" rows="1" maxlength="500" placeholder="Ask a parenting question..." autocomplete="off"></textarea>
+                    <input type="hidden" name="ConversationId" id="conversationId">
+                    <button class="buddy-send" type="submit" aria-label="Send message"><i class="bi bi-send-fill"></i></button>
+                </form>
+                <div class="buddy-safety">
+                    <i class="bi bi-shield-check"></i>
+                    <span>Parent Buddy provides general informational guidance and cannot diagnose or replace a qualified professional. In an immediate emergency in India, call 112.</span>
+                </div>
+            </section>
+        </div>
+    </div>
+</div>
+@section Scripts { <script src="~/js/buddy.js" asp-append-version="true"></script> }

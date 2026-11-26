@@ -56,10 +56,10 @@ public class UiNavigationTests
         var parentHome = await (await parentClient.GetAsync("/")).Content.ReadAsStringAsync();
         Assert.Contains("Go to Parent Dashboard", parentHome);
         Assert.Contains("Parent Dashboard", parentHome);
-        Assert.Contains("Buddy Conversations", parentHome);
+        Assert.Contains("Parent Buddy", parentHome);
         Assert.Contains("Assessment History", parentHome);
         Assert.Contains("floatingBuddyTrigger", parentHome);
-        Assert.DoesNotContain("floatingBuddyForm", parentHome);
+        Assert.Contains("floatingBuddyForm", parentHome);
         Assert.DoesNotContain("Get started", parentHome);
 
         // Create Child

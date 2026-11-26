@@ -35,6 +35,16 @@ public class ChatController(
         return Json(result);
     }
 
+    [HttpGet("/api/chat/conversations")]
+    public async Task<IActionResult> GetConversations()
+    {
+        var profile = await User.GetCurrentChildProfileAsync(db, userManager);
+        if (profile is null) return Forbid();
+
+        var conversations = await chatService.GetConversationsAsync(profile.Id);
+        return Json(conversations);
+    }
+
     [HttpGet("/api/chat/history/{conversationId}")]
     public async Task<IActionResult> GetHistory([FromRoute] string conversationId)
     {

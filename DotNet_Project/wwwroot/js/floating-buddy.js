@@ -8,17 +8,35 @@ document.addEventListener('DOMContentLoaded', () => {
     const input = document.getElementById('floatingBuddyInput');
     const messages = document.getElementById('floatingBuddyMessages');
     const typing = document.getElementById('floatingBuddyTyping');
-    const idKey = 'mindcare-buddy-conversation-id';
+
+    const conversationsEndpoint = panel.dataset.conversationsEndpoint || '/api/chat/conversations';
+    const historyEndpoint = panel.dataset.historyEndpoint || '/api/chat/history';
+    const idKey = panel.dataset.storageKey || 'mindcare-buddy-conversation-id';
+    const userSenderKey = panel.dataset.userSender || 'child';
+    const convPrefix = panel.dataset.convPrefix || 'conv';
     let historyLoaded = false;
 
     const getCsrfToken = () => document.querySelector('input[name="__RequestVerificationToken"]')?.value || '';
 
-    const getConversationId = () => {
+    const getConversationId = async () => {
         let id = sessionStorage.getItem(idKey);
         if (!id) {
-            id = crypto.randomUUID ? `conv-${crypto.randomUUID()}` : `conv-${Date.now()}`;
-            sessionStorage.setItem(idKey, id);
+            try {
+                const res = await fetch(conversationsEndpoint);
+                if (res.ok) {
+                    const list = await res.json();
+                    if (Array.isArray(list) && list.length > 0) {
+                        id = list[0].conversationId;
+                    }
+                }
+            } catch {
+                // fallback
+            }
         }
+        if (!id) {
+            id = crypto.randomUUID ? `${convPrefix}-${crypto.randomUUID()}` : `${convPrefix}-${Date.now()}`;
+        }
+        sessionStorage.setItem(idKey, id);
         return id;
     };
 
@@ -35,13 +53,14 @@ document.addEventListener('DOMContentLoaded', () => {
         if (historyLoaded || !messages) return;
         historyLoaded = true;
         try {
-            const res = await fetch(`/api/chat/history/${getConversationId()}`);
+            const convId = await getConversationId();
+            const res = await fetch(`${historyEndpoint}/${encodeURIComponent(convId)}`);
             if (res.ok) {
                 const data = await res.json();
                 if (data.messages && data.messages.length > 0) {
                     messages.innerHTML = '';
                     data.messages.forEach(m => {
-                        appendMessage(m.message, m.sender === 'child' ? 'user' : 'bot');
+                        appendMessage(m.message, m.sender === userSenderKey ? 'user' : 'bot');
                     });
                 }
             }
@@ -78,6 +97,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const token = getCsrfToken();
             try {
+                const convId = await getConversationId();
                 const endpoint = form.dataset.endpoint || '/Chat/SendMessage';
                 const res = await fetch(endpoint, {
                     method: 'POST',
@@ -86,19 +106,20 @@ document.addEventListener('DOMContentLoaded', () => {
                         'RequestVerificationToken': token,
                         'X-CSRF-TOKEN': token
                     },
-                    body: JSON.stringify({ message: text, conversationId: getConversationId() })
+                    body: JSON.stringify({ message: text, conversationId: convId })
                 });
 
                 if (res.ok) {
                     const data = await res.json();
+                    if (data.conversationId) sessionStorage.setItem(idKey, data.conversationId);
                     if (data.buddyReply?.message) {
                         appendMessage(data.buddyReply.message, 'bot');
                     }
                 } else {
-                    appendMessage("I'm here with you. Tell me a little more about how you're feeling.", 'bot');
+                    appendMessage("I'm here with you. Please try sending your message again.", 'bot');
                 }
             } catch {
-                appendMessage("I'm here with you. Tell me a little more about how you're feeling.", 'bot');
+                appendMessage("I'm here with you. Please check your connection and try again.", 'bot');
             } finally {
                 typing?.classList.add('d-none');
                 isSending = false;

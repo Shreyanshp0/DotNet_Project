@@ -101,6 +101,7 @@ builder.Services.AddScoped<IWeeklyInsightService, WeeklyInsightService>();
 builder.Services.AddScoped<ISupportRequestService, SupportRequestService>();
 builder.Services.AddScoped<IAssessmentService, AssessmentService>();
 builder.Services.AddScoped<IChatService, ChatService>();
+builder.Services.AddScoped<IParentBuddyService, ParentBuddyService>();
 builder.Services.AddScoped<IParentActivityService, ParentActivityService>();
 
 var app = builder.Build();

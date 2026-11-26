@@ -208,6 +208,15 @@ public class ChatHistoryResponse
     public List<ChatMessageDto> Messages { get; set; } = new();
 }
 
+public class ChatConversationSummaryDto
+{
+    public string ConversationId { get; set; } = string.Empty;
+    public string LastMessagePreview { get; set; } = string.Empty;
+    public int MessageCount { get; set; }
+    public DateTime StartedAt { get; set; }
+    public DateTime LastMessageAt { get; set; }
+}
+
 public class ParentChildChatHistoryResponse
 {
     public int ChildProfileId { get; set; }

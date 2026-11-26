@@ -9,6 +9,7 @@ public interface IChatService
 {
     Task<ChatSendMessageResponse> SendMessageAsync(int childProfileId, string message, string? conversationId);
     Task<ChatHistoryResponse> GetHistoryAsync(int childProfileId, string conversationId);
+    Task<List<ChatConversationSummaryDto>> GetConversationsAsync(int childProfileId);
 }
 
 public class ChatService(ApplicationDbContext db, IGeminiAiService geminiService) : IChatService
@@ -98,5 +99,36 @@ public class ChatService(ApplicationDbContext db, IGeminiAiService geminiService
             ConversationId = conversationId,
             Messages = messages
         };
+    }
+
+    public async Task<List<ChatConversationSummaryDto>> GetConversationsAsync(int childProfileId)
+    {
+        var messages = await db.ChatMessages
+            .Where(m => m.ChildProfileId == childProfileId)
+            .OrderBy(m => m.CreatedAt)
+            .ToListAsync();
+
+        return messages
+            .GroupBy(m => m.ConversationId)
+            .Select(g =>
+            {
+                var ordered = g.OrderBy(x => x.CreatedAt).ToList();
+                var last = ordered.Last();
+                var firstChild = ordered.FirstOrDefault(x => x.Sender == "child") ?? ordered.First();
+                var preview = firstChild.Message.Length > 60
+                    ? firstChild.Message[..57] + "..."
+                    : firstChild.Message;
+
+                return new ChatConversationSummaryDto
+                {
+                    ConversationId = g.Key,
+                    LastMessagePreview = preview,
+                    MessageCount = ordered.Count,
+                    StartedAt = ordered.First().CreatedAt,
+                    LastMessageAt = last.CreatedAt
+                };
+            })
+            .OrderByDescending(c => c.LastMessageAt)
+            .ToList();
     }
 }

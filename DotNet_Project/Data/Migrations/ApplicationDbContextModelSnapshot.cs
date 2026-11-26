@@ -412,6 +412,41 @@ namespace DotNet_Project.Data.Migrations
                     b.ToTable("MoodEntries");
                 });
 
+            modelBuilder.Entity("DotNet_Project.Models.ParentChatMessage", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("ConversationId")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Message")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ParentUserId")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Sender")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ParentUserId", "ConversationId", "CreatedAt");
+
+                    b.ToTable("ParentChatMessages");
+                });
+
             modelBuilder.Entity("DotNet_Project.Models.SupportRequest", b =>
                 {
                     b.Property<int>("Id")
@@ -749,6 +784,17 @@ namespace DotNet_Project.Data.Migrations
                         .IsRequired();
 
                     b.Navigation("ChildProfile");
+                });
+
+            modelBuilder.Entity("DotNet_Project.Models.ParentChatMessage", b =>
+                {
+                    b.HasOne("DotNet_Project.Models.ApplicationUser", "ParentUser")
+                        .WithMany()
+                        .HasForeignKey("ParentUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("ParentUser");
                 });
 
             modelBuilder.Entity("DotNet_Project.Models.SupportRequest", b =>

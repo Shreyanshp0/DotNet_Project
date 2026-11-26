@@ -1,20 +1,42 @@
 @{ ViewData["Title"] = "MindCare Buddy"; }
 @section Styles { <link rel="stylesheet" href="~/css/buddy.css" asp-append-version="true" /> }
-<div class="buddy-page">
+<div class="buddy-page"
+     id="buddyApp"
+     data-conversations-endpoint="/api/chat/conversations"
+     data-history-endpoint="/api/chat/history"
+     data-storage-key="mindcare-buddy-conversation-id"
+     data-size-key="mindcare-buddy-shell-size"
+     data-user-sender="child"
+     data-conv-prefix="conv"
+     data-greeting="Hi! I’m MindCare Buddy. I’m happy to listen. How are you feeling today?">
     <div class="container buddy-container">
         <div class="buddy-toolbar">
             <a class="back-link" asp-action="Index"><i class="bi bi-arrow-left"></i> Back to my space</a>
-            <button type="button" class="btn btn-outline-secondary btn-sm" id="clearConversation"><i class="bi bi-arrow-counterclockwise me-1"></i> Clear conversation</button>
+            <div class="d-flex flex-wrap gap-2">
+                <button type="button" class="btn btn-outline-secondary btn-sm" id="toggleExpandBuddy">
+                    <i class="bi bi-arrows-angle-expand me-1"></i> Expand view
+                </button>
+                <button type="button" class="btn btn-outline-secondary btn-sm" id="clearConversation">
+                    <i class="bi bi-plus-circle me-1"></i> New conversation
+                </button>
+            </div>
         </div>
-        <div class="buddy-shell">
+        <div class="buddy-shell" id="buddyShell">
             <aside class="buddy-intro">
                 <div class="buddy-intro-header">
                     <div class="buddy-avatar buddy-avatar-large"><i class="bi bi-stars"></i></div>
                     <span class="eyebrow">A friendly listening space</span>
                 </div>
                 <h1>Meet MindCare Buddy</h1>
-                <p>Sometimes it helps to talk things through. I can listen, help you name a feeling, or just keep you company for a little while.</p>
-                <div class="buddy-online"><span></span> Available to chat</div>
+                <p>Sometimes it helps to talk things through. Your past conversations stay saved so you can pick up anytime.</p>
+
+                <div class="buddy-history-sidebar">
+                    <span class="card-kicker mb-2">Your conversations</span>
+                    <div class="buddy-conversation-list" id="buddyConversationList">
+                        <small class="text-muted">Loading conversations...</small>
+                    </div>
+                </div>
+
                 <div class="buddy-help-card">
                     <i class="bi bi-heart-pulse"></i>
                     <div>
@@ -32,15 +54,7 @@
                         <span><i class="bi bi-circle-fill"></i> Online</span>
                     </div>
                 </header>
-                <div class="buddy-messages" id="buddyMessages" aria-live="polite" aria-label="Conversation">
-                    <div class="buddy-message buddy-message-bot">
-                        <div class="message-avatar"><i class="bi bi-stars"></i></div>
-                        <div>
-                            <div class="message-bubble">Hi! I’m MindCare Buddy. I’m happy to listen. How are you feeling today?</div>
-                            <time>Just now</time>
-                        </div>
-                    </div>
-                </div>
+                <div class="buddy-messages" id="buddyMessages" aria-live="polite" aria-label="Conversation"></div>
                 <div class="buddy-typing d-none" id="buddyTyping"><span></span><span></span><span></span><small>Buddy is thinking...</small></div>
                 <div class="buddy-prompts" id="buddyPrompts">
                     <span class="prompt-label">You could say...</span>

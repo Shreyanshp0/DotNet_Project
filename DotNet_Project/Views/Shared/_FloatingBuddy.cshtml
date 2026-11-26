@@ -4,28 +4,37 @@
     var isAuthenticated = User.Identity?.IsAuthenticated ?? false;
     var isChild = User.IsInRole("Child");
     var isParent = User.IsInRole("Parent");
-    var isBuddyPage = string.Equals(controller, "Child", StringComparison.OrdinalIgnoreCase) &&
-                      string.Equals(action, "Buddy", StringComparison.OrdinalIgnoreCase);
+    var isChildBuddyPage = string.Equals(controller, "Child", StringComparison.OrdinalIgnoreCase) &&
+                           string.Equals(action, "Buddy", StringComparison.OrdinalIgnoreCase);
+    var isParentBuddyPage = string.Equals(controller, "ParentBuddy", StringComparison.OrdinalIgnoreCase);
     var isAccountPage = string.Equals(controller, "Account", StringComparison.OrdinalIgnoreCase);
 }
-@if (isAuthenticated && !isBuddyPage && !isAccountPage && (isChild || isParent))
+@if (isAuthenticated && !isChildBuddyPage && !isParentBuddyPage && !isAccountPage && (isChild || isParent))
 {
     <button type="button"
             class="floating-buddy-trigger"
             id="floatingBuddyTrigger"
-            aria-label="Open MindCare Buddy"
+            aria-label="Open @(isParent ? "Parent Buddy" : "MindCare Buddy")"
             aria-expanded="false"
-            title="MindCare Buddy">
+            title="@(isParent ? "Parent Buddy" : "MindCare Buddy")">
         <i class="bi bi-stars"></i>
     </button>
 
-    <div class="floating-buddy-panel d-none" id="floatingBuddyPanel" role="dialog" aria-label="MindCare Buddy">
+    <div class="floating-buddy-panel d-none"
+         id="floatingBuddyPanel"
+         role="dialog"
+         aria-label="@(isParent ? "Parent Buddy" : "MindCare Buddy")"
+         data-conversations-endpoint="@(isParent ? "/api/parent-buddy/conversations" : "/api/chat/conversations")"
+         data-history-endpoint="@(isParent ? "/api/parent-buddy/history" : "/api/chat/history")"
+         data-storage-key="@(isParent ? "mindcare-parent-buddy-conversation-id" : "mindcare-buddy-conversation-id")"
+         data-user-sender="@(isParent ? "parent" : "child")"
+         data-conv-prefix="@(isParent ? "pconv" : "conv")">
         <div class="floating-buddy-header">
             <div class="floating-buddy-title">
                 <span class="floating-buddy-icon"><i class="bi bi-stars"></i></span>
                 <div>
-                    <strong class="d-block lh-sm" style="font-size:.92rem;">MindCare Buddy</strong>
-                    <small class="text-muted" style="font-size:.72rem;">@(isChild ? "Friendly listening space" : "Parent guide")</small>
+                    <strong class="d-block lh-sm" style="font-size:.92rem;">@(isParent ? "Parent Buddy" : "MindCare Buddy")</strong>
+                    <small class="text-muted" style="font-size:.72rem;">@(isParent ? "Parent guidance space" : "Friendly listening space")</small>
                 </div>
             </div>
             <div class="d-flex align-items-center gap-1">
@@ -35,34 +44,28 @@
                         <i class="bi bi-arrows-angle-expand"></i>
                     </a>
                 }
-                <button type="button" class="btn btn-ghost btn-sm px-2 py-1" id="floatingBuddyClose" aria-label="Close MindCare Buddy">
+                else if (isParent)
+                {
+                    <a asp-controller="ParentBuddy" asp-action="Index" class="btn btn-ghost btn-sm px-2 py-1" title="Open full Parent Buddy page">
+                        <i class="bi bi-arrows-angle-expand"></i>
+                    </a>
+                }
+                <button type="button" class="btn btn-ghost btn-sm px-2 py-1" id="floatingBuddyClose" aria-label="Close Buddy">
                     <i class="bi bi-x-lg"></i>
                 </button>
             </div>
         </div>
 
-        @if (isChild)
-        {
-            <div class="floating-buddy-messages" id="floatingBuddyMessages" aria-live="polite">
-                <div class="floating-msg floating-msg-bot">Hi! I’m MindCare Buddy. How are you feeling right now?</div>
+        <div class="floating-buddy-messages" id="floatingBuddyMessages" aria-live="polite">
+            <div class="floating-msg floating-msg-bot">
+                @(isParent ? "Hello! I’m Parent Buddy. Ask me any general parenting question." : "Hi! I’m MindCare Buddy. How are you feeling right now?")
             </div>
-            <div class="px-3 pb-1 small text-muted d-none" id="floatingBuddyTyping">Buddy is thinking...</div>
-            <form class="floating-buddy-composer" id="floatingBuddyForm" data-endpoint="/Chat/SendMessage">
-                <label class="visually-hidden" for="floatingBuddyInput">Message MindCare Buddy</label>
-                <textarea id="floatingBuddyInput" rows="1" maxlength="500" placeholder="Type a message..." autocomplete="off"></textarea>
-                <button class="floating-buddy-send" type="submit" aria-label="Send message"><i class="bi bi-send-fill"></i></button>
-            </form>
-        }
-        else if (isParent)
-        {
-            <div class="p-3">
-                <p class="small text-muted mb-3">
-                    MindCare Buddy is a dedicated listening space for children. As a parent, you can review your children's Buddy conversations from your dashboard.
-                </p>
-                <a asp-controller="Parent" asp-action="ChatHistory" class="btn btn-primary btn-sm w-100">
-                    <i class="bi bi-chat-dots me-1"></i> View Buddy Conversations
-                </a>
-            </div>
-        }
+        </div>
+        <div class="px-3 pb-1 small text-muted d-none" id="floatingBuddyTyping">Thinking...</div>
+        <form class="floating-buddy-composer" id="floatingBuddyForm" data-endpoint="@(isParent ? "/Parent/Buddy/SendMessage" : "/Chat/SendMessage")">
+            <label class="visually-hidden" for="floatingBuddyInput">Message Buddy</label>
+            <textarea id="floatingBuddyInput" rows="1" maxlength="500" placeholder="@(isParent ? "Ask a parenting question..." : "Type a message...")" autocomplete="off"></textarea>
+            <button class="floating-buddy-send" type="submit" aria-label="Send message"><i class="bi bi-send-fill"></i></button>
+        </form>
     </div>
 }

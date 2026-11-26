@@ -174,6 +174,9 @@ public class JournalSentimentTests
         public Task<string> GenerateBuddyReplyAsync(ChildProfile childProfile, string userMessage, List<ChatMessage> conversationHistory) =>
             Task.FromResult("Hello");
 
+        public Task<string> GenerateParentBuddyReplyAsync(ApplicationUser parentUser, string userMessage, List<ParentChatMessage> conversationHistory) =>
+            Task.FromResult("Hello parent");
+
         public Task<JournalSentimentResult?> AnalyzeJournalSentimentAsync(string journalText, CancellationToken cancellationToken = default)
         {
             if (ThrowOnAnalyze) throw new HttpRequestException("Simulated Gemini outage");
@@ -319,6 +322,9 @@ public class JournalSentimentIntegrationTests
 
         public Task<string> GenerateBuddyReplyAsync(ChildProfile childProfile, string userMessage, List<ChatMessage> conversationHistory) =>
             Task.FromResult("Hello");
+
+        public Task<string> GenerateParentBuddyReplyAsync(ApplicationUser parentUser, string userMessage, List<ParentChatMessage> conversationHistory) =>
+            Task.FromResult("Hello parent");
 
         public Task<JournalSentimentResult?> AnalyzeJournalSentimentAsync(string journalText, CancellationToken cancellationToken = default) =>
             Task.FromResult(Result);

@@ -149,6 +149,7 @@ public class WeeklyInsightTests
         public Task<List<AssessmentQuestionItem>> GenerateQuestionsAsync(ChildProfile childProfile) => Task.FromResult(new List<AssessmentQuestionItem>());
         public Task<AIReport> GenerateReportAsync(Assessment assessment, ChildProfile childProfile, List<AssessmentAnswer> answers) => Task.FromResult(new AIReport());
         public Task<string> GenerateBuddyReplyAsync(ChildProfile childProfile, string userMessage, List<ChatMessage> conversationHistory) => Task.FromResult("Hello");
+        public Task<string> GenerateParentBuddyReplyAsync(ApplicationUser parentUser, string userMessage, List<ParentChatMessage> conversationHistory) => Task.FromResult("Hello parent");
         public Task<JournalSentimentResult?> AnalyzeJournalSentimentAsync(string journalText, CancellationToken cancellationToken = default) => Task.FromResult<JournalSentimentResult?>(null);
 
         public Task<WeeklyInsightAiResult?> GenerateWeeklyInsightAsync(WeeklyAggregationResult aggregation, CancellationToken cancellationToken = default)

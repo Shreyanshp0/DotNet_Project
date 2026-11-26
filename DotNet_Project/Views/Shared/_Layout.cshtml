@@ -9,13 +9,12 @@
                  string.Equals(currentAction, "Index", StringComparison.OrdinalIgnoreCase);
     var isChildDashboard = string.Equals(currentController, "Child", StringComparison.OrdinalIgnoreCase) ||
                            string.Equals(currentController, "Assessment", StringComparison.OrdinalIgnoreCase);
-    var isParentChatHistory = string.Equals(currentController, "Parent", StringComparison.OrdinalIgnoreCase) &&
-                              string.Equals(currentAction, "ChatHistory", StringComparison.OrdinalIgnoreCase);
+    var isParentBuddy = string.Equals(currentController, "ParentBuddy", StringComparison.OrdinalIgnoreCase);
     var isParentHistory = string.Equals(currentController, "Parent", StringComparison.OrdinalIgnoreCase) &&
                           (string.Equals(currentAction, "History", StringComparison.OrdinalIgnoreCase) ||
                            string.Equals(currentAction, "QuestionnaireDetails", StringComparison.OrdinalIgnoreCase));
     var isParentDashboard = string.Equals(currentController, "Parent", StringComparison.OrdinalIgnoreCase) &&
-                            !isParentChatHistory && !isParentHistory;
+                            !isParentHistory;
 }
 <!DOCTYPE html>
 <html lang="en">
@@ -52,7 +51,7 @@
                         @if (isParent)
                         {
                             <li class="nav-item"><a class="nav-link @(isParentDashboard ? "active" : "")" asp-controller="Parent" asp-action="Index">Parent Dashboard</a></li>
-                            <li class="nav-item"><a class="nav-link @(isParentChatHistory ? "active" : "")" asp-controller="Parent" asp-action="ChatHistory">Buddy Conversations</a></li>
+                            <li class="nav-item"><a class="nav-link @(isParentBuddy ? "active" : "")" asp-controller="ParentBuddy" asp-action="Index">Parent Buddy</a></li>
                             <li class="nav-item"><a class="nav-link @(isParentHistory ? "active" : "")" asp-controller="Parent" asp-action="History">Assessment History</a></li>
                         }
                     </ul>
